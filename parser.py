@@ -5,8 +5,22 @@ import sys
 import random
 import re
 import math
-from difflib import SequenceMatcher as fuzzyCompare
-#use this as fuzzyCompare(None, string_one, string_two).ratio()
+from difflib import SequenceMatcher as fuzzyCompare #use this as fuzzyCompare(None, string_one, string_two).ratio()
+
+#we use this function to check if our platform supports color output or not
+def platform_supports_color():
+    """
+    Returns True if the running system's terminal supports color, and False
+    otherwise.
+    """
+    plat = sys.platform
+    supported_platform = plat != 'Pocket PC' and (plat != 'win32' or
+                                                  'ANSICON' in os.environ)
+    # isatty is not always implemented, #6223.
+    is_a_tty = hasattr(sys.stdout, 'isatty') and sys.stdout.isatty()
+    if not supported_platform or not is_a_tty:
+        return False
+    return True
 
 #we define general properties and settings of the project in this section
      #this class takes care of general properties like names, extensons, processor configuration etc.
@@ -215,7 +229,7 @@ global_parameter_list =  [   # PARAMETER NAME      ,      DATA TYPE     ,   DEFA
                          ]
 
 #defining an error and warning streams
-     #this allows us to colour our outputs
+     #this allows us to color our outputs
 class bcolors:
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
@@ -225,6 +239,11 @@ class bcolors:
     ENDC = '\033[0m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
+    
+    #"make_discolored" : This function checks if the platform supports color, and if not, then it changes the color codes to the 'null' character 
+    @staticmethod
+    def make_discolored():
+         HEADER = OKBLUE = OKGREEN = WARNING = FAIL = ENDC = BOLD = UNDERLINE = '\0'
     
     #this allows us to throw errors, while keeping track of their count
 def eprint(is_error, terminate_compilation, *args, **kwargs):
@@ -260,6 +279,13 @@ def eprint(is_error, terminate_compilation, *args, **kwargs):
           quit()
 eprint.warning_counter = 1
 eprint.error_counter = 1
+
+#||---------------------------------------------||
+#START OF PROGRAM
+#||---------------------------------------------||
+#we check if the console supports color output
+if (not platform_supports_color()):
+     bcolor.make_discolored()
 
 #extract the filename to be compiled
 file_name = ""

@@ -6,21 +6,17 @@ import random
 import re
 import math
 from difflib import SequenceMatcher as fuzzyCompare #use this as fuzzyCompare(None, string_one, string_two).ratio()
+import os
+from support import platform_supports_color
+from support import bcolors
+from support import other_support
+from subprocess import Popen, PIPE
+from tabulate import tabulate
 
-#we use this function to check if our platform supports color output or not
-def platform_supports_color():
-    """
-    Returns True if the running system's terminal supports color, and False
-    otherwise.
-    """
-    plat = sys.platform
-    supported_platform = plat != 'Pocket PC' and (plat != 'win32' or
-                                                  'ANSICON' in os.environ)
-    # isatty is not always implemented, #6223.
-    is_a_tty = hasattr(sys.stdout, 'isatty') and sys.stdout.isatty()
-    if not supported_platform or not is_a_tty:
-        return False
-    return True
+
+#TO-DO
+#complete check processor settings function
+#complete other flags (i.e. help, version, etc.)
 
 #we define general properties and settings of the project in this section
      #this class takes care of general properties like names, extensons, processor configuration etc.
@@ -29,36 +25,84 @@ class properties:
      #"PROJECT_NAME" : this holds the name of the project
      #"FILE_EXTENSION" : this holds the extension of the files that it expects to compile
      #"FILE_WRITE_CONSOLE_EXTENSION" : this holds the partial name of the console output saved into a text file
+     #"FLAG_INFO_FILE_NAME" : holds the names of the files that hold information about the flag names and flag definitions
+     #NOTE: modifying the flags in any external file DOES NOT affect the flags stored internally
      PROJECT_NAME                  = "Bhabha"
      FILE_EXTENSION                = ".asm"
      FILE_WRITE_CONSOLE_EXTENSION  = "_console_view.txt"      #NOTE: this is to be preceded by the name of the file that is being compiled
+     FLAG_INFO_FILE_NAME           = ["flag_list","flag_defs"] 
      
      #"REGISTER COUNT" : This holds the count of number of registers that exist in the processor
      #"RAM COUNT" : This holds the count of number of ram cells (each 1 byte) that exist in the processor
      #"STACK_COUNT" : This holds the count of number of stack cells (each 1 byte) that exist in the processor
      #"PROCESSOR_SPEED" : This holds the processor frequency in hertz
-     REGISTER_COUNT                = int()
-     RAM_COUNT                     = int()
-     STACK_COUNT                   = int()
-     CONSOLE_COUNT                 = int()
-     PROCESSOR_SPEED               = int()
+     REGISTER_COUNT                = 8
+     RAM_COUNT                     = 256
+     STACK_COUNT                   = 8
+     CONSOLE_COUNT                 = 8
+     PROCESSOR_SPEED               = 1
      
+     #"help" : this prints the help contents for the user
+     @staticmethod
+     def help():
+          
+          print("\n"+bcolors.give_yellow_text("HELP"))
+          print("Bhabha is an assembly simulator, and runs a dialect of RISC instructions developed at the University of Waterloo.")
+          print("The following table shows the default configuration of the processor Bhabha simulates:\n")
+          
+          properties.getDefaultSettings(False)
+          
+          print("\nThe following list displays all the parameters(flags) that Bhabha uses alongside their descriptions:\n")
+          
+          #we read from the file the required data, and 'decode' it using a caesar-cypher-like technique
+          final_table = other_support.give_flag_info(properties.FLAG_INFO_FILE_NAME[0], properties.FLAG_INFO_FILE_NAME[1])
+          final_table = final_table[0:-1]
+          print(final_table)
+
+     #"version" : this prints information about the program to the user
+     @staticmethod
+     def version():
+          headings =  [
+                         bcolors.give_green_text("Project Name"),
+                         bcolors.give_green_text("Version"),
+                         bcolors.give_green_text("Author")
+                      ]
+                      
+          values =    [
+                         bcolors.give_blue_text("Bhabha"),
+                         bcolors.give_blue_text("1.0.0"),
+                         bcolors.give_blue_text("Prabal Gupta")
+                      ]
+          
+          print("\n"+bcolors.give_yellow_text("VERSION INFORMATION"))            
+          print(tabulate([values], headings, tablefmt="grid"))
+          
+     #"getDefaultSettings" : this prints information abour the default values of the processor
+     @staticmethod
+     def getDefaultSettings(printHeader=True):
+          
+          headings =  [
+                         bcolors.give_green_text("RAM Size"),
+                         bcolors.give_green_text("Registers"),
+                         bcolors.give_green_text("Stack Size"),
+                         bcolors.give_green_text("Console Size"),
+                         bcolors.give_green_text("Processor Frequency")
+                      ]
+                      
+          values =    [
+                         bcolors.give_blue_text(str(properties.RAM_COUNT) + " bytes"),
+                         bcolors.give_blue_text(str(properties.REGISTER_COUNT) + " bytes"),
+                         bcolors.give_blue_text(str(properties.STACK_COUNT) + " bytes"),
+                         bcolors.give_blue_text(str(properties.CONSOLE_COUNT) + " characters"),
+                         bcolors.give_blue_text(str(properties.PROCESSOR_SPEED) + " Hertz")
+                      ]
+          if (printHeader):
+               print("\n"+bcolors.give_yellow_text("DEFAULT PROCESSOR CONFIGURATION"))            
+          print(tabulate([values], headings, tablefmt="grid"))
+          
+          
      #"check_processor_settings" : This receives process values and checks them to see if they are valid
      
-     #this converts the input text to yellow color
-     @staticmethod
-     def give_yellow_text(input_string):
-          return bcolors.WARNING + input_string + bcolors.ENDC
-          
-     #this converts the input text to red color
-     @staticmethod
-     def give_red_text(input_string):
-          return bcolors.FAIL + input_string + bcolors.ENDC
-          
-     #this converts the input text to green color
-     @staticmethod
-     def give_green_text(input_string):
-          return bcolors.OKGREEN + input_string + bcolors.ENDC
      
      #"parse_parameters" : this function receives a list of command line arguments, and it processes them to convert user input to stored data
      #                     and returns a list of errors as strings
@@ -66,30 +110,30 @@ class properties:
      @staticmethod
      def parse_parameters(input_list):
           #this receives a data type, and a string, and checks if the string holds that type of data
-          def give_data(data_type, received_data):
+          def give_data(input_data_type, received_data):
                regex_string = ""
-               if (data_type == data_type.INT):
-                    regex_string = "^([-+]{0,1}[1-9]+)$"
-               elif (data_type == data_type.STRING):
+               if (input_data_type == data_type.INT):
+                    regex_string = "^([-+]{0,1}[0-9]+)$"
+               elif (input_data_type == data_type.STRING):
                     regex_string = "(.+)"
-               elif (data_type == data_type.BOOL):
-                    regex.string = "^(true|false)$"
+               elif (input_data_type == data_type.BOOL):
+                    regex_string = "^(true|false)$"
                     
                match_object = re.findall(regex_string, received_data, re.DOTALL | re.IGNORECASE)
-               if (len(match_object)<0):
+               if (len(match_object)<=0):
                     return None
                else:
                     if (len(match_object[0])<=0):
                         return None
                     else:
-                         if (data_type==data_type.INT):
+                         if (input_data_type==data_type.INT):
                               return int(match_object[0])
-                         elif (data_type==data_type.BOOL):
+                         elif (input_data_type==data_type.BOOL):
                               if (match_object[0].lower()=="false"):
                                    return False
                               else:
                                    return True
-                         elif (data_type==data_type.STRING):
+                         elif (input_data_type==data_type.STRING):
                               if (match_object[0]==""):
                                    return None
                               else:
@@ -104,43 +148,53 @@ class properties:
                if (element.find('=')!=-1):
                     formatted_element = element[element.find('-')+1:element.find('=')]
                else:
-                    formatted_element = element[element.find('-'):]
+                    formatted_element = element[element.find('-')+1:]
                
                found_parameter = False
                #we extract the values from the given parameters
                for index in range(0, len(global_parameter_list)):
-                    if (global_parameter_list[index][0] is formatted_element):
+                    if (global_parameter_list[index][0] == formatted_element):
                          found_parameter = True
                          if (global_parameter_list[index][1]==data_type.ONLY_INFO):
                               global_parameter_list[index][2] = True
                          else:
-                              global_parameter_list[index][2] = give_data(global_parameter_list[index][1], element[element.find('='):])
+                              global_parameter_list[index][2] = give_data(global_parameter_list[index][1], element[element.find('=')+1:])
                               
                          #we increment the call counter to indicate how many times this element was encountered, and we record an appropriate error
-                         global_parameter_list[6] += 1
-                         if (global_prameter_list[6]==2):   #we use '2' so that this error only occurs once
-                              error_message = properties.give_red_text("Error: parameter ") + properties.give_yellow_text("'" + global_parameter_list[index] + "'") + properties.give_red_text(" was used multiple times.\n") 
+                         global_parameter_list[index][6] += 1
+                         if (global_parameter_list[index][6]==2):   #we use '2' so that this error only occurs once
+                              error_message = bcolors.give_red_text("Error: parameter ") + bcolors.give_yellow_text("'" + global_parameter_list[index][0] + "'") + bcolors.give_red_text(" was used multiple times.\n") 
                               error_list.append(error_message)
                               
                if (not found_parameter):
-                    error_message = properties.give_red_text("Error: parameter ") + properties.give_yellow_text("'"+element+"'") + properties.give_red_text(" could not be found.")
+                    error_message = bcolors.give_red_text("Error: parameter ") + bcolors.give_yellow_text("'"+element+"'") + bcolors.give_red_text(" could not be found.")
                     
                     #we look through the entire list of parameters to find the closest match
                     highest_index = 0.00
                     highest_ratio = 0.00
-                    lower_bound = 0.75 #if the ratio is below this, the error won't be displayed on the screen
+                    lower_bound = 0.70 #if the ratio is below this, the error won't be displayed on the screen
                     for index in range(0, len(global_parameter_list)):
                          new_ratio = fuzzyCompare(None, formatted_element, global_parameter_list[index][0]).ratio()
                          if (new_ratio>highest_ratio):
                               highest_index = index
                               highest_ratio = new_ratio 
+                    found_fuzzy_match = False
                     if (highest_ratio>lower_bound):
-                         error_message = error_message + "\n" + properties.give_red_text("Did you mean to use the ") + properties.give_green_text("'" + global_parameter_list[highest_index][0]+"'") + properties.give_red_text(" parameter?")
-                    
+                         error_message = error_message + "\n" + bcolors.give_red_text("Did you mean to use the ") + bcolors.give_green_text("'" + global_parameter_list[highest_index][0]+"'") + bcolors.give_red_text(" parameter?")
+                         found_fuzzy_match = True
+                         
                     if (element[0]!='-'):
-                         error_message = properties.give_red_text("Error: command-line parameter ") + properties.give_yellow_text("'"+element+"'") + properties.give_red_text(" was used with incorrect syntax.")
-                    error_message = error_message + "\n" + properties.give_red_text("Proper syntax for command-line parameters is ") + properties.give_green_text('-parameter_name=value') + properties.give_red_text(" or ") + properties.give_green_text("-parameter_name") + properties.give_red_text(".\n")
-                    error_list.append(error_message)
+                         error_message = bcolors.give_red_text("Error: command-line parameter ") + bcolors.give_yellow_text("'"+element+"'") + bcolors.give_red_text(" was used with incorrect syntax.")
+                    
+                    error_message = error_message + "\n" + bcolors.give_red_text("Proper syntax for") + bcolors.give_red_text(" this " if (found_fuzzy_match and error_message[0:3]=="Did") else " every ") + bcolors.give_red_text("command-line parameter is ")
+                    if (found_fuzzy_match and error_message[0:3]=="Did"):
+                         if (global_parameter_list[highest_index][1]==data_type.ONLY_INFO):
+                              error_message = error_message + bcolors.give_green_text("-parameter_name")
+                         else:
+                              error_message = error_message + bcolors.give_green_text('-parameter_name=value')
+                    else:
+                         error_message = error_message + bcolors.give_green_text('-parameter_name=value') + bcolors.give_red_text(" or ") + bcolors.give_green_text("-parameter_name")
+                    error_list.append(error_message + bcolors.give_red_text(".\n"))
                     
           return error_list
                
@@ -152,8 +206,8 @@ class properties:
                if (input_val is None):
                     return False
                     
-               if (lower_bound <= input_val):
-                    return True
+               if (lower_bound > input_val):
+                    return False
                if (input_val==float('inf')):
                     if (upper_bound==float('inf')):
                          return True
@@ -170,20 +224,27 @@ class properties:
                     if (element[1]!=data_type.ONLY_INFO):
                          if (not check_bounds(element[3], element[2], element[4])):
                               input_parameter_name = "'" + element[0] + "'"
-                              error_message = properties.give_red_text("Error: ") + properties.give_yellow_text(input_parameter_name) + properties.give_red_text(" is out of bounds.")
+                              error_message = bcolors.give_red_text("Error: ") + bcolors.give_yellow_text(input_parameter_name) + bcolors.give_red_text(" is out of bounds.")
                               
                               formatted_condition = element[5].replace("<place-holder-name>", input_parameter_name)
-                              formatted_condition = formatted_condition.replace("<place-holder-min>", str(element[3]))
-                              formatted_condition = formatted_condition.replace("<place-holder-max>", str(element[4]))
+                              lower_bound_string = str(element[3])
+                              lower_bound_string = lower_bound_string.replace("inf", 	u"\u221E")
+                              formatted_condition = formatted_condition.replace("<place-holder-min>", lower_bound_string)
+                              
+                              upper_bound_string = str(element[4])
+                              upper_bound_string = upper_bound_string.replace("inf", 	u"\u221E")
+                              formatted_condition = formatted_condition.replace("<place-holder-max>", upper_bound_string)
                               
                               parameter_value = element[2]
                               if (parameter_value is None):
-                                   parameter_vale = "invalid"
+                                   parameter_value = "invalid"
+                              parameter_value = str(parameter_value)
                                    
-                              error_message_extra = properties.give_red_text("The condition ") + properties.give_yellow_text(formatted_condition) + properties.give_red_text(" was not satisfied because ") + properties.give_yellow_text(input_parameter_name) + properties.give_red_text(" has a value of ") + properties.give_yellow_text(element[2]) + properties.give_red_text(".\n")
-                              
+                              error_message_extra = bcolors.give_red_text("The condition ") + bcolors.give_green_text(formatted_condition) + bcolors.give_red_text(" was not satisfied because ") + bcolors.give_yellow_text(input_parameter_name) + bcolors.give_red_text(" has a value that is ") + bcolors.give_yellow_text(parameter_value) + bcolors.give_red_text(".\n")
                               error_message = error_message + "\n" + error_message_extra
+                              
                               error_list.append(error_message)
+                              
                return error_list
                
           return give_appropriate_errors(global_parameter_list)
@@ -192,6 +253,7 @@ class properties:
      #this class take manages how the input is parsed
 #class syntax:
           
+
 
      #store list of required parameters
 class data_type:
@@ -212,39 +274,22 @@ class data_type:
      #"help" : displays user the list of commands required to properly use the compiler
      #"version" : displays the version of compiler to the user
      #"defaultProcessor" : displays on screen the default configuration of the processor
-global_parameter_list =  [   # PARAMETER NAME      ,      DATA TYPE     ,   DEFAULT   , MIN.,     MAX     ,                            CONDITION                                         CALLS 
-                              ["maxErrors"         , data_type.INT      , float('inf'), 1   , float('inf'), "<place-holder-min> <= <place-holder-name> <= <place-holder-max>"         ,  0],
-                              ["maxWarnings"       , data_type.INT      , float('inf'), 1   , float('inf'), "<place-holder-min> <= <place-holder-name> <= <place-holder-max>"         ,  0],
-                              ["showWarnings"      , data_type.BOOL     , True        , True, False       , "<place-holder-name> can only be <place-holder-max> or <place-holder-min>",  0],
-                              ["displayConsoleOnly", data_type.BOOL     , True        , True, False       , "<place-holder-name> can only be <place-holder-max> or <place-holder-min>",  0],
-                              ["writeConsole"      , data_type.BOOL     , True        , True, False       , "<place-holder-name> can only be <place-holder-max> or <place-holder-min>",  0],
-                              ["executionSpeed"    , data_type.INT      , 1           , 1   , float('inf'), "<place-holder-min> <= <place-holder-name> <= <place-holder-max>"         ,  0],
-                              ["version"           , data_type.ONLY_INFO, False       , None, None        , None                                                                      ,  0],
-                              ["help"              , data_type.ONLY_INFO, False       , None, None        , None                                                                      ,  0],
-                              ["registerCount"     , data_type.INT      , 8           , 4   , float('inf'), "<place-holder-min> <= <place-holder-name> <= <place-holder-max>"         ,  0],
-                              ["ramSize"           , data_type.INT      , 256         , 128 , float('inf'), "<place-holder-min> <= <place-holder-name> <= <place-holder-max>"         ,  0],
-                              ["stackCount"        , data_type.INT      , 8           , 8   , float('inf'), "<place-holder-min> <= <place-holder-name> <= <place-holder-max>"         ,  0],
-                              ["consoleSize"       , data_type.INT      , 8           , 0   , float('inf'), "<place-holder-min> <= <place-holder-name> <= <place-holder-max>"         ,  0],
-                              ["defaultProcessor"  , data_type.ONLY_INFO, False       , None, None        , None                                                                      ,  0]
+global_parameter_list =  [   # PARAMETER NAME      ,      DATA TYPE     ,           DEFAULT          , MIN.,     MAX     ,                            CONDITION                                         CALLS 
+                              ["maxErrors"         , data_type.INT      , float('inf')               , 1    , float('inf'), "<place-holder-min> <= <place-holder-name> <= <place-holder-max>"         ,  0],
+                              ["maxWarnings"       , data_type.INT      , float('inf')               , 1    , float('inf'), "<place-holder-min> <= <place-holder-name> <= <place-holder-max>"         ,  0],
+                              ["showWarnings"      , data_type.BOOL     , True                       , False, True        , "<place-holder-name> can only be <place-holder-max> or <place-holder-min>",  0],
+                              ["displayConsoleOnly", data_type.BOOL     , False                       , False, True        , "<place-holder-name> can only be <place-holder-max> or <place-holder-min>",  0],
+                              ["writeConsole"      , data_type.BOOL     , False                       , False, True        , "<place-holder-name> can only be <place-holder-max> or <place-holder-min>",  0],
+                              ["executionSpeed"    , data_type.INT      , properties.PROCESSOR_SPEED , 0    , float('inf'), "<place-holder-min> <= <place-holder-name> <= <place-holder-max>"         ,  0],
+                              ["version"           , data_type.ONLY_INFO, False                      , None , None        , None                                                                      ,  0],
+                              ["help"              , data_type.ONLY_INFO, False                      , None , None        , None                                                                      ,  0],
+                              ["registerCount"     , data_type.INT      , properties.REGISTER_COUNT  , 4    , float('inf'), "<place-holder-min> <= <place-holder-name> <= <place-holder-max>"         ,  0],
+                              ["ramSize"           , data_type.INT      , properties.RAM_COUNT       , 128  , float('inf'), "<place-holder-min> <= <place-holder-name> <= <place-holder-max>"         ,  0],
+                              ["stackCount"        , data_type.INT      , properties.STACK_COUNT     , 8    , float('inf'), "<place-holder-min> <= <place-holder-name> <= <place-holder-max>"         ,  0],
+                              ["consoleSize"       , data_type.INT      , properties.CONSOLE_COUNT   , 1    , float('inf'), "<place-holder-min> <= <place-holder-name> <= <place-holder-max>"         ,  0],
+                              ["defaultProcessor"  , data_type.ONLY_INFO, False , None , None        , None                                                                      ,  0]
                          ]
 
-#defining an error and warning streams
-     #this allows us to color our outputs
-class bcolors:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
-    
-    #"make_discolored" : This function checks if the platform supports color, and if not, then it changes the color codes to the 'null' character 
-    @staticmethod
-    def make_discolored():
-         HEADER = OKBLUE = OKGREEN = WARNING = FAIL = ENDC = BOLD = UNDERLINE = '\0'
-    
     #this allows us to throw errors, while keeping track of their count
 def eprint(is_error, terminate_compilation, *args, **kwargs):
      #we check what kind of message we are supposed to print, and we identify relevant characteristics
@@ -258,7 +303,13 @@ def eprint(is_error, terminate_compilation, *args, **kwargs):
           message_type = ["Error", "errors"]
           max_value = global_parameter_list[0][2]
           display_message = True
-          
+     
+     #this line keeps track of the fact that 'maxErrors' or 'maxWarnings' or 'display_message' could be 'None'
+     if (max_value is None):
+          max_value = float('inf')
+     if (display_message is None):
+          display_message = True
+     
      if (display_message):
           if (counter <= max_value):
                print(*args, file=sys.stderr, **kwargs)
@@ -285,19 +336,19 @@ eprint.error_counter = 1
 #||---------------------------------------------||
 #we check if the console supports color output
 if (not platform_supports_color()):
-     bcolor.make_discolored()
+     bcolors.make_discolored()
 
 #extract the filename to be compiled
 file_name = ""
 if (len(sys.argv)<2):
-     error_message = properties.give_red_text("Error: no filename found.")
-     error_message  = error_message + properties.give_red_text("\nExpected ") + properties.give_yellow_text("<file_name> <parameter-1> <parameter-2> <parameter-3> ... \n")
+     error_message = bcolors.give_red_text("Error: no filename found.")
+     error_message  = error_message + bcolors.give_red_text("\nExpected ") + bcolors.give_yellow_text("<file_name> <parameter-1> <parameter-2> <parameter-3> ... \n")
      eprint(True, True, error_message)
 
 file_name = sys.argv[1]
 if (not ((file_name[::-1])[0:4]==".asm"[::-1])):
-     error_message = properties.give_red_text("Error: invalid filename found.")
-     error_message = error_message + properties.give_red_text("\nExpected ") + properties.give_green_text(".asm") + properties.give_red_text(" at the end of the input filename ") + properties.give_yellow_text("'"+sys.argv[1]+"'") + properties.give_red_text(".\n")
+     error_message = bcolors.give_red_text("Error: invalid filename found.")
+     error_message = error_message + bcolors.give_red_text("\nExpected ") + bcolors.give_green_text(".asm") + bcolors.give_red_text(" at the end of the input filename ") + bcolors.give_yellow_text("'"+sys.argv[1]+"'") + bcolors.give_red_text(".\n")
      eprint(True, True, error_message)
 
 #we parse the command line arguments to find the appropriate errors
@@ -314,8 +365,27 @@ for element in bounds_errors:
 
 if (len(errors)>0):
      errors_occurred = True
-for index in range(0, len(errors)):
-     terminate_program = False
-     if (index==len(errors)-1):
-          terminate_program = True
-     eprint(True, terminate_program, errors[index])
+
+if (errors_occurred):
+     for index, element in enumerate(errors):
+          terminate_program = False
+          if (index==len(errors)-1):
+               terminate_program = True
+          eprint(True, terminate_program, element)
+          
+#we continue while assuming all the flags were correctly processed
+     #these are the flags that do not require any values
+if (global_parameter_list[12][2]):
+     properties.getDefaultSettings()
+if (global_parameter_list[6][2]):
+     properties.version()
+if (global_parameter_list[7][2]):
+     properties.help()
+     #these are the rest of the flags
+     
+#start parsing the file according to the given input
+input = "test"
+cproc = Popen([sys.executable, "compiler.py"], stdin=PIPE, stdout=PIPE, stderr=PIPE)
+out, err = cproc.communicate(input)
+
+print(out)

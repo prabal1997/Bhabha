@@ -6,6 +6,7 @@ import random
 import re
 import math
 import os
+from tabulate import tabulate
 
 #we use this function to check if our platform supports color output or not
 def platform_supports_color():
@@ -72,9 +73,10 @@ class other_support:
            line_len = len(file[row_var])
            curr_line = ""
            for col_var in range(0, line_len):
-                new_character = ord(file[row_var][col_var])-row_var*col_var
-                number_of_unicode_characters = 1111998
-                new_character = new_character % number_of_unicode_characters
+                CEASER_CIPER_OFFSET = 100
+                new_character = ord(file[row_var][col_var])-CEASER_CIPER_OFFSET
+                number_of_characters = 256
+                new_character = new_character % number_of_characters
                 curr_line += chr(new_character)
            if (row_var!=rows-1):
                curr_line += "\n"
@@ -93,10 +95,11 @@ class other_support:
            line_len = len(string_to_write[row_var])
            curr_line = ""
            for col_var in range(0, line_len):
-                new_character = ord(string_to_write[row_var][col_var])+row_var*col_var
-                number_of_unicode_characters = 1111998
-                new_character = new_character % number_of_unicode_characters
-                curr_line += chr(new_character)
+               CEASER_CIPER_OFFSET= 100
+               new_character = ord(string_to_write[row_var][col_var])+CEASER_CIPER_OFFSET
+               number_of_characters = 256
+               new_character = new_character % number_of_characters
+               curr_line += str(chr(new_character))
            if (row_var!=rows-1):
                curr_line += "\n"
            final_string += curr_line
@@ -107,7 +110,39 @@ class other_support:
         
         return(final_string)
         
-file_open = open("temp", "r")
-string_to_code = file_open.read()
-file_open.close()
-other_support.code_file(file_open, "file_list")
+    @staticmethod
+    def give_flag_info(flag_list, flag_defs):
+        list_of_flags = other_support.decode_file(flag_list)
+        list_of_defs = other_support.decode_file(flag_defs)
+        
+        #making parameter list
+        list_of_flags = list_of_flags.split("\n")
+        list_length = len(list_of_flags)
+        for index in range(0, list_length):
+            list_of_flags[index] = bcolors.give_green_text(list_of_flags[index])
+        
+        #making definition list
+        list_of_defs = list_of_defs.replace("<red>", bcolors.FAIL)
+        list_of_defs = list_of_defs.replace("<green>", bcolors.OKGREEN)
+        list_of_defs = list_of_defs.replace("<blue>", bcolors.OKBLUE)
+        list_of_defs = list_of_defs.replace("<yellow>", bcolors.WARNING)
+        list_of_defs = list_of_defs.replace("<bold>", bcolors.BOLD)
+        list_of_defs = list_of_defs.replace("<end>", bcolors.ENDC)
+        list_of_defs = list_of_defs.split("\n<split>\n")
+        def_length = len(list_of_defs)
+        
+        #we merge the lists
+        small_int = def_length if (def_length<list_length) else list_length
+        
+        new_list = []
+        for index in range(0, small_int):
+            new_element = [list_of_flags[index], list_of_defs[index]]
+            new_list.append(new_element)
+        
+        #making a new table
+        final_table = ""
+        for element in new_list:
+            final_table += tabulate([[element[0]]], tablefmt="grid") + "\n"
+            final_table += element[1] + "\n"
+        
+        return final_table

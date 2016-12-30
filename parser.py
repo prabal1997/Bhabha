@@ -13,11 +13,6 @@ from support import other_support
 from subprocess import Popen, PIPE
 from tabulate import tabulate
 
-
-#TO-DO
-#complete check processor settings function
-#complete other flags (i.e. help, version, etc.)
-
 #we define general properties and settings of the project in this section
      #this class takes care of general properties like names, extensons, processor configuration etc.
 class properties:
@@ -102,8 +97,24 @@ class properties:
           
           
      #"check_processor_settings" : This receives process values and checks them to see if they are valid
-     
-     
+     @staticmethod
+     def check_processor_settings():
+          red = bcolors.give_red_text
+          blue = bcolors.give_blue_text
+          green = bcolors.give_green_text
+          yellow = bcolors.give_yellow_text
+          
+          RATIO_OF_RAM_TO_MAX_STACK = 0.25
+          error_list = []
+          for index in [10, 11]:
+               if (global_parameter_list[index][2]>global_parameter_list[9][2]*RATIO_OF_RAM_TO_MAX_STACK):
+                    message_condition = green("\""+str(global_parameter_list[index][3]) + " <= ") + green("'"+global_parameter_list[index][0] + "'") + green(" <= 0.25 "+ u"\u00D7" +" " + "'"+global_parameter_list[9][0]+"'\"") 
+                    error_message = red("Error: ") + yellow("'"+global_parameter_list[index][0]+"'") + red(" is incorrect.\n")
+                    error_message += red("The condition ") + message_condition + red(" was not satisfied because ") + yellow("'"+global_parameter_list[9][0]+"'") + red(" and ") + yellow("'"+global_parameter_list[index][0]+"'" + red(" are ") + yellow(str(global_parameter_list[9][2])) + red(" and ") + yellow(str(global_parameter_list[index][2])) + red(" respectively.")) + "\n"
+                    
+                    error_list.append(error_message)
+               
+          return error_list
      #"parse_parameters" : this function receives a list of command line arguments, and it processes them to convert user input to stored data
      #                     and returns a list of errors as strings
      #NOTE : this DOES NOT work for a parameter of type data_type.ONLY_INFO 
@@ -178,16 +189,17 @@ class properties:
                          if (new_ratio>highest_ratio):
                               highest_index = index
                               highest_ratio = new_ratio 
+                              
+                    if (element[0]!='-'):
+                         error_message = bcolors.give_red_text("Error: command-line parameter ") + bcolors.give_yellow_text("'"+element+"'") + bcolors.give_red_text(" was used with incorrect syntax.")
+                    
                     found_fuzzy_match = False
                     if (highest_ratio>lower_bound):
                          error_message = error_message + "\n" + bcolors.give_red_text("Did you mean to use the ") + bcolors.give_green_text("'" + global_parameter_list[highest_index][0]+"'") + bcolors.give_red_text(" parameter?")
                          found_fuzzy_match = True
-                         
-                    if (element[0]!='-'):
-                         error_message = bcolors.give_red_text("Error: command-line parameter ") + bcolors.give_yellow_text("'"+element+"'") + bcolors.give_red_text(" was used with incorrect syntax.")
                     
-                    error_message = error_message + "\n" + bcolors.give_red_text("Proper syntax for") + bcolors.give_red_text(" this " if (found_fuzzy_match and error_message[0:3]=="Did") else " every ") + bcolors.give_red_text("command-line parameter is ")
-                    if (found_fuzzy_match and error_message[0:3]=="Did"):
+                    error_message = error_message + "\n" + bcolors.give_red_text("Proper syntax for") + bcolors.give_red_text(" this " if (found_fuzzy_match) else " every ") + bcolors.give_red_text("command-line parameter is ")
+                    if (found_fuzzy_match):
                          if (global_parameter_list[highest_index][1]==data_type.ONLY_INFO):
                               error_message = error_message + bcolors.give_green_text("-parameter_name")
                          else:
@@ -224,7 +236,7 @@ class properties:
                     if (element[1]!=data_type.ONLY_INFO):
                          if (not check_bounds(element[3], element[2], element[4])):
                               input_parameter_name = "'" + element[0] + "'"
-                              error_message = bcolors.give_red_text("Error: ") + bcolors.give_yellow_text(input_parameter_name) + bcolors.give_red_text(" is out of bounds.")
+                              error_message = bcolors.give_red_text("Error: ") + bcolors.give_yellow_text(input_parameter_name) + bcolors.give_red_text(" is incorrect.")
                               
                               formatted_condition = element[5].replace("<place-holder-name>", input_parameter_name)
                               lower_bound_string = str(element[3])
@@ -238,7 +250,9 @@ class properties:
                               parameter_value = element[2]
                               if (parameter_value is None):
                                    parameter_value = "invalid"
-                              parameter_value = str(parameter_value)
+                              
+                              if (not bcolors.is_string(parameter_value)):
+                                   parameter_value = str(parameter_value)
                                    
                               error_message_extra = bcolors.give_red_text("The condition ") + bcolors.give_green_text(formatted_condition) + bcolors.give_red_text(" was not satisfied because ") + bcolors.give_yellow_text(input_parameter_name) + bcolors.give_red_text(" has a value that is ") + bcolors.give_yellow_text(parameter_value) + bcolors.give_red_text(".\n")
                               error_message = error_message + "\n" + error_message_extra
@@ -275,18 +289,18 @@ class data_type:
      #"version" : displays the version of compiler to the user
      #"defaultProcessor" : displays on screen the default configuration of the processor
 global_parameter_list =  [   # PARAMETER NAME      ,      DATA TYPE     ,           DEFAULT          , MIN.,     MAX     ,                            CONDITION                                         CALLS 
-                              ["maxErrors"         , data_type.INT      , float('inf')               , 1    , float('inf'), "<place-holder-min> <= <place-holder-name> <= <place-holder-max>"         ,  0],
-                              ["maxWarnings"       , data_type.INT      , float('inf')               , 1    , float('inf'), "<place-holder-min> <= <place-holder-name> <= <place-holder-max>"         ,  0],
-                              ["showWarnings"      , data_type.BOOL     , True                       , False, True        , "<place-holder-name> can only be <place-holder-max> or <place-holder-min>",  0],
-                              ["displayConsoleOnly", data_type.BOOL     , False                       , False, True        , "<place-holder-name> can only be <place-holder-max> or <place-holder-min>",  0],
-                              ["writeConsole"      , data_type.BOOL     , False                       , False, True        , "<place-holder-name> can only be <place-holder-max> or <place-holder-min>",  0],
-                              ["executionSpeed"    , data_type.INT      , properties.PROCESSOR_SPEED , 0    , float('inf'), "<place-holder-min> <= <place-holder-name> <= <place-holder-max>"         ,  0],
+                              ["maxErrors"         , data_type.INT      , float('inf')               , 1    , float('inf'), "'<place-holder-min> <= <place-holder-name> <= <place-holder-max>'"         ,  0],
+                              ["maxWarnings"       , data_type.INT      , float('inf')               , 1    , float('inf'), "'<place-holder-min> <= <place-holder-name> <= <place-holder-max>'"         ,  0],
+                              ["showWarnings"      , data_type.BOOL     , True                       , False, True        , "'<place-holder-name> can only be <place-holder-max> or <place-holder-min>'",  0],
+                              ["displayConsoleOnly", data_type.BOOL     , False                       , False, True        , "'<place-holder-name> can only be <place-holder-max> or <place-holder-min>'",  0],
+                              ["writeConsole"      , data_type.BOOL     , False                       , False, True        , "'<place-holder-name> can only be <place-holder-max> or <place-holder-min>'",  0],
+                              ["executionSpeed"    , data_type.INT      , properties.PROCESSOR_SPEED , 0    , float('inf'), "'<place-holder-min> <= <place-holder-name> <= <place-holder-max>'"         ,  0],
                               ["version"           , data_type.ONLY_INFO, False                      , None , None        , None                                                                      ,  0],
                               ["help"              , data_type.ONLY_INFO, False                      , None , None        , None                                                                      ,  0],
-                              ["registerCount"     , data_type.INT      , properties.REGISTER_COUNT  , 4    , float('inf'), "<place-holder-min> <= <place-holder-name> <= <place-holder-max>"         ,  0],
-                              ["ramSize"           , data_type.INT      , properties.RAM_COUNT       , 128  , float('inf'), "<place-holder-min> <= <place-holder-name> <= <place-holder-max>"         ,  0],
-                              ["stackCount"        , data_type.INT      , properties.STACK_COUNT     , 8    , float('inf'), "<place-holder-min> <= <place-holder-name> <= <place-holder-max>"         ,  0],
-                              ["consoleSize"       , data_type.INT      , properties.CONSOLE_COUNT   , 1    , float('inf'), "<place-holder-min> <= <place-holder-name> <= <place-holder-max>"         ,  0],
+                              ["registerCount"     , data_type.INT      , properties.REGISTER_COUNT  , 4    , float('inf'), "'<place-holder-min> <= <place-holder-name> <= <place-holder-max>'"         ,  0],
+                              ["ramSize"           , data_type.INT      , properties.RAM_COUNT       , 128  , float('inf'), "'<place-holder-min> <= <place-holder-name> <= <place-holder-max>'"         ,  0],
+                              ["stackCount"        , data_type.INT      , properties.STACK_COUNT     , 8    , float('inf'), "'<place-holder-min> <= <place-holder-name> <= <place-holder-max>'"         ,  0],
+                              ["consoleSize"       , data_type.INT      , properties.CONSOLE_COUNT   , 1    , float('inf'), "'<place-holder-min> <= <place-holder-name> <= <place-holder-max>'"         ,  0],
                               ["defaultProcessor"  , data_type.ONLY_INFO, False , None , None        , None                                                                      ,  0]
                          ]
 
@@ -314,7 +328,7 @@ def eprint(is_error, terminate_compilation, *args, **kwargs):
           if (counter <= max_value):
                print(*args, file=sys.stderr, **kwargs)
           if (counter == max_value):
-               print(bcolors.WARNING + message_type[0] + " limit reached. No more " + message_type[1] + " will be printed." + bcolors.ENDC)
+               print(bcolors.WARNING + message_type[0] + " limit reached. No more " + message_type[1] + " will be printed." + bcolors.ENDC, file=sys.stderr)
                if (is_error):
                     terminate_compilation = True
           #these variables keep track of how many times this function was called
@@ -326,7 +340,7 @@ def eprint(is_error, terminate_compilation, *args, **kwargs):
                     
      #we terminate compilation after printing an appropriate error message on the screen.          
      if (terminate_compilation):
-          print(bcolors.FAIL + "Compilation Terminated." + bcolors.ENDC)
+          print(bcolors.FAIL + "Compilation Terminated." + bcolors.ENDC, file=sys.stderr)
           quit()
 eprint.warning_counter = 1
 eprint.error_counter = 1
@@ -355,13 +369,12 @@ if (not ((file_name[::-1])[0:4]==".asm"[::-1])):
 errors_occurred = False
 command_line_arguments = sys.argv[2:] #we separate the file-name of the compilable file from the rest of the list
 errors = []
+
 parse_errors = properties.parse_parameters(command_line_arguments)
 bounds_errors = properties.check_parameters()
+processor_errors =  properties.check_processor_settings()
 
-for element in parse_errors:
-     errors.append(element)
-for element in bounds_errors:
-     errors.append(element)
+errors = parse_errors + bounds_errors + processor_errors
 
 if (len(errors)>0):
      errors_occurred = True
@@ -384,8 +397,16 @@ if (global_parameter_list[7][2]):
      #these are the rest of the flags
      
 #start parsing the file according to the given input
-input = "test"
-cproc = Popen([sys.executable, "compiler.py"], stdin=PIPE, stdout=PIPE, stderr=PIPE)
-out, err = cproc.communicate(input)
+input_data = global_parameter_list[0:6] + global_parameter_list[8:12]
+for index, element in enumerate(input_data):
+     input_data[index] = str(element[2]) if (not bcolors.is_string(element[2])) else element[2]
+input_data = [sys.executable, "compiler.py"] + input_data + [str(platform_supports_color())]
 
+cproc = Popen(input_data, stdin=PIPE, stdout=PIPE, stderr=PIPE) #sys.executable is the address where the current script is being ran
+out, err = cproc.communicate()
+
+#processing output received from the assembly parser
+#NOTE: make sure that no INSTRUCTION string when viewed on the console includes a '\t' character or <split> word in it, or your screen might start looking very odd
+print(err)
 print(out)
+#NOTE: do 'writing output to file' here

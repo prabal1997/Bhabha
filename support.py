@@ -8,6 +8,7 @@ import math
 import os
 from tabulate import tabulate
 
+ 
 #we use this function to check if our platform supports color output or not
 def platform_supports_color():
     """
@@ -32,31 +33,51 @@ class bcolors:
      ENDC = "\033[0m"
      BOLD = "\033[1m"
      UNDERLINE = "\033[4m"
-
+     MAKE_DISCOLORED = False
+    
     #"make_discolored" : This function checks if the platform supports color, and if not, then it changes the color codes to the 'null' character 
      @staticmethod
+
      def make_discolored():
-         HEADER = OKBLUE = OKGREEN = WARNING = FAIL = ENDC = BOLD = UNDERLINE = ""
+         bcolors.MAKE_DISCOLORED = True
+         bcolors.HEADER = bcolors.OKBLUE = bcolors.OKGREEN = bcolors.WARNING = bcolors.FAIL = bcolors.ENDC = bcolors.BOLD = bcolors.UNDERLINE = ""
+
+     @staticmethod
+     def is_string(this_object):
+         if (isinstance(this_object, str) or isinstance(this_object, unicode)):
+             return True
+         return False
+     
+     @staticmethod
+     def give_colored_text(input_string, color):
+         main_color = color
+         if (bcolors.MAKE_DISCOLORED):
+             main_color = ""
+             
+         if(not bcolors.is_string(input_string)):
+            input_string = str(input_string)
+            
+         return (color + input_string + bcolors.ENDC)
      
      #this converts the input text to yellow color
      @staticmethod
      def give_yellow_text(input_string):
-          return bcolors.WARNING + str(input_string) + bcolors.ENDC
+        return bcolors.give_colored_text(input_string, bcolors.WARNING)
           
      #this converts the input text to red color
      @staticmethod
      def give_red_text(input_string):
-          return bcolors.FAIL + str(input_string) + bcolors.ENDC
+        return bcolors.give_colored_text(input_string, bcolors.FAIL)
           
      #this converts the input text to green color
      @staticmethod
      def give_green_text(input_string):
-          return bcolors.OKGREEN + str(input_string) + bcolors.ENDC
+        return bcolors.give_colored_text(input_string, bcolors.OKGREEN)
           
      #this converts the input text to blue color
      @staticmethod
      def give_blue_text(input_string):
-          return bcolors.OKBLUE + str(input_string) + bcolors.ENDC
+        return bcolors.give_colored_text(input_string, bcolors.OKBLUE)
           
 #"decode_file" : opens a file, reads it, decodes it, and returns the equivalent string
 class other_support:
@@ -99,7 +120,7 @@ class other_support:
                new_character = ord(string_to_write[row_var][col_var])+CEASER_CIPER_OFFSET
                number_of_characters = 256
                new_character = new_character % number_of_characters
-               curr_line += str(chr(new_character))
+               curr_line += chr(new_character)
            if (row_var!=rows-1):
                curr_line += "\n"
            final_string += curr_line
@@ -120,7 +141,7 @@ class other_support:
         list_length = len(list_of_flags)
         for index in range(0, list_length):
             list_of_flags[index] = bcolors.give_green_text(list_of_flags[index])
-        
+    
         #making definition list
         list_of_defs = list_of_defs.replace("<red>", bcolors.FAIL)
         list_of_defs = list_of_defs.replace("<green>", bcolors.OKGREEN)
@@ -146,3 +167,4 @@ class other_support:
             final_table += element[1] + "\n"
         
         return final_table
+        

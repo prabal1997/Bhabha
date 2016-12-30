@@ -12,7 +12,7 @@ import support
 import subprocess
 from support import platform_supports_color
 from support import bcolors
-
+ 
 #TO-DO:
 #complete flags processor
 #complete the function that fethces data from the flags processor, and other relevant things
@@ -22,26 +22,29 @@ class computer:
      #this is the list of all commands
      #NOTE: no labels or comments have been included here; the concept of 'labels' has been hardcoded into the program
      #NOTE: comments are lines that start with the '#' symbol
-     #        COMMAND            FORMAT                        PSEDUO-REGEX
+     #        COMMAND            FORMAT                        PSEUDO-REGEX
      SYNTAX =  [     
-                    [["LD"]   , ["<nnnn>, Ri", "Ri, Rj"]     , ["nnnn , Ri", "Ri , Ri"]     ],
-                    [["LDi"]  , ["nnnn, Ri", "nnnn, Ri"]     , ["nnnn , Ri", "nnnn , Ri"]   ],
-                    [["SD"]   , ["Ri, <nnnn>", "Ri, Rj"]     , ["Ri , nnnn", "Ri , Ri"]     ],
-                    [["SDi"]  , ["mmmm, <nnnn>", "mmmm, Ri"] , ["nnnn , nnnn", "nnnn , Ri"] ],
-                    [["ADD"]  , ["Ri, Rj, Rk"]               , ["Ri , Ri , Ri"]             ],
-                    [["ADDi"] , ["Ri, nnnn, Rj"]             , ["Ri , nnnn , Ri"]           ],
-                    [["SUB"]  , ["Ri, Rj, Rk"]               , ["Ri , Ri , Ri"]             ],
-                    [["SUBi"] , ["Ri, nnnn, Rj"]             , ["Ri , nnnn , Ri"]           ],
-                    [["MUL"]  , ["Ri, Rj, Rk"]               , ["Ri , Ri , Ri"]             ],
-                    [["MULi"] , ["Ri, nnnn, Rj"]             , ["Ri , nnnn , Ri"]           ],
-                    [["DIV"]  , ["Ri, Rj, Rk"]               , ["Ri , Ri , Ri"]             ],
-                    [["JMP"]  , ["<nnnn>"]                   , ["nnnn"]                   ],
-                    [["JZ"]   , ["Ri, <nnnn>"]               , ["Ri , nnnn"]               ],
-                    [["JNZ"]  , ["Ri, <nnnn>"]               , ["Ri , nnnn"]               ],
-                    [["JGZ"]  , ["Ri, <nnnn>"]               , ["Ri , nnnn"]               ],
-                    [["JGEZ"] , ["Ri, <nnnn>"]               , ["Ri , nnnn"]               ],
-                    [["JLZ"]  , ["Ri, <nnnn>"]               , ["Ri , nnnn"]               ],
-                    [["JLEZ"] , ["Ri, <nnnn>"]               , ["Ri , nnnn"]               ]
+                    ["LD"   , ["<nnnn>, Ri", "Ri, Rj"]      , ["<nnnn> , Ri", "Ri , Ri"]        ,[]],
+                    ["LDi"  , ["nnnn, Ri"]                  , ["nnnn , Ri"]                     ,[]],
+                    ["SD"   , ["Ri, <nnnn>", "Ri, Rj"]      , ["Ri , <nnnn>", "Ri , Ri"]        ,[]],
+                    ["SDi"  , ["mmmm, <nnnn>", "mmmm, Ri"]  , ["nnnn , <nnnn>", "nnnn , Ri"]    ,[]],
+                    ["ADD"  , ["Ri, Rj, Rk"]                , ["Ri , Ri , Ri"]                  ,[]],
+                    ["ADDi" , ["Ri, nnnn, Rj"]              , ["Ri , nnnn , Ri"]                ,[]],
+                    ["SUB"  , ["Ri, Rj, Rk"]                , ["Ri , Ri , Ri"]                  ,[]],
+                    ["SUBi" , ["Ri, nnnn, Rj"]              , ["Ri , nnnn , Ri"]                ,[]],
+                    ["MUL"  , ["Ri, Rj, Rk"]                , ["Ri , Ri , Ri"]                  ,[]],
+                    ["MULi" , ["Ri, nnnn, Rj"]              , ["Ri , nnnn , Ri"]                ,[]],
+                    ["DIV"  , ["Ri, Rj, Rk"]                , ["Ri , Ri , Ri"]                  ,[]],
+                    ["JMP"  , ["<label-name>"]              , ["<label-name>"]                  ,[]],
+                    ["JZ"   , ["Ri, <nnnn>"]                , ["Ri , <nnnn>"]                   ,[]],
+                    ["JNZ"  , ["Ri, <nnnn>"]                , ["Ri , <nnnn>"]                   ,[]],
+                    ["JGZ"  , ["Ri, <nnnn>"]                , ["Ri , <nnnn>"]                   ,[]],
+                    ["JGEZ" , ["Ri, <nnnn>"]                , ["Ri , <nnnn>"]                   ,[]],
+                    ["JLZ"  , ["Ri, <nnnn>"]                , ["Ri , <nnnn>"]                   ,[]],
+                    ["JLEZ" , ["Ri, <nnnn>"]                , ["Ri , <nnnn>"]                   ,[]],
+                    ["PUSH" , ["Ri", "nnnn"]                , ["Ri", "nnnn"]                    ,[]],
+                    ["POP"  , ["Ri"]                        , ["Ri"]                            ,[]],
+                    [""     , ["<label-name>"]              , ["<label-name>:"]                 ,[]]
                ]
      #Program State Registers
      #NOTE: these registers are ADDITIONAL to the registers that the user specified
@@ -50,7 +53,6 @@ class computer:
      INSTRUCTION_POINTER = 0 #this keeps track of the address where the current instruction being executed is stored
      
      CONSOLE_VIEW = [] #this includes the text that will be displayed on the screen
-     COMMENT_SYMBOL = "#" #this is the symbol that indicates the beginning of a comment
      REGISTER_VIEW = [] #this includes the contents of all registers
      MEMORY_VIEW = [] #this includes the stack, and the instructions
      DATA_MEMORY = [] #this separate from the RAM; special area for storing instructions
@@ -72,6 +74,14 @@ class computer:
      INSTRUCTION = ""
      LAST_ERROR = "" #this string holds the last warning/error that occured during the program execution (stack overflow, division by zero, found a negative number etc...)
      
+     #OTHER FLAGS
+     MAX_ERRORS = float('inf')
+     MAX_WARNINGS = float('inf')
+     SHOW_WARNINGS = True
+     DISPLAY_CONSOLE_ONLY = False
+     WRITE_CONSOLE = False
+     COLOR_SUPPORTED = False
+     
 #||------------------------------------------------||
 #PARSING FUNCTIONS
 #||------------------------------------------------||
@@ -81,9 +91,21 @@ class computer:
 class receive_data:
      @staticmethod
      def fetch_flags():
-          #do something
+          #convert from string to appropriate data-types, storing data in appropriate fields
+          computer.MAX_ERRORS = float('inf') if (sys.argv[1+0]=="inf") else int(sys.argv[1+0])
+          computer.MAX_WARNINGS = float('inf') if (sys.argv[1+1]=="inf") else int(sys.argv[1+1])
+          computer.SHOW_WARNINGS = True if (sys.argv[1+2]=="True") else False
+          computer.DISPLAY_CONSOLE_ONLY = True if (sys.argv[1+3]=="True") else False
+          computer.WRITE_CONSOLE = True if (sys.argv[1+4]=="True") else False
+          computer.PROCESSOR_SPEED = int(sys.argv[1+5])
+          computer.REGISTER_COUNT = int(sys.argv[1+6])
+          computer.RAM_COUNT = int(sys.argv[1+7])
+          computer.STACK_COUNT = int(sys.argv[1+8])
+          computer.CONSOLE_COUNT = int(sys.argv[1+9])
+          computer.COLOR_SUPPORTED = True if (sys.argv[1+10]=="True") else False
           
-          print("FETCH_FLAGS CALLED")
+          display_state.eprint.warning_counter = 1
+          display_state.eprint.error_counter = 1
      
      #this function, based on the processor configuration, sets up a computer with the required settings
      @staticmethod
@@ -94,6 +116,40 @@ class receive_data:
                computer.REGISTER_VIEW.append(0)
           for index in range(0, computer.RAM_COUNT):
                computer.MEMORY_VIEW.append(0)
+               
+     #this function converts the 'pseduo-regex' to actual regex
+     @staticmethod
+     def make_regex():
+          label_placeholder = "<label-name>"
+          int_placeholder = "nnnn"
+          address_placeholder = "<nnnn>"
+          register_placeholder = "Ri"
+          space_placeholder = " "
+          
+          label_regex = "([a-zA-Z_]+[0-9a-zA-Z_-]*)"
+          int_regex = "([+-]{0,1}(?:0b[0-1]+|0x[0-9A-Fa-f]+|[0-9]+))"
+          register_regex = "([rR]{1,1}[0-9]+)"
+          space_regex = "\s*"
+          beginning_regex = ""
+          ending_regex = "\s*(?:\#.*|\s*)$"
+          
+          command_count = len(computer.SYNTAX)
+          for row in range(0, command_count):
+               
+               beginning_regex = "^\s*" + computer.SYNTAX[row][0]+"\s" + ( "*" if (computer.SYNTAX[row][0] == "") else "+")
+               for col in range(0, len(computer.SYNTAX[row][2])):
+                    semi_regex = computer.SYNTAX[row][2][col]
+                    
+                    semi_regex = semi_regex.replace(":", "\s*\:")                    
+                    semi_regex = semi_regex.replace(label_placeholder, label_regex)
+                    semi_regex = semi_regex.replace(address_placeholder, int_regex)
+                    semi_regex = semi_regex.replace(int_placeholder, int_regex)
+                    semi_regex = semi_regex.replace(register_placeholder, register_regex)
+                    semi_regex = semi_regex.replace(space_placeholder, "\s*")
+                    
+                    semi_regex = beginning_regex+semi_regex+ending_regex
+                    computer.SYNTAX[row][3].append(semi_regex)
+          
      
 #this class is responsible for displaying the state of the program on the screen     
 class display_state:
@@ -114,7 +170,7 @@ class display_state:
           
           register_values = [computer.PROGRAM_COUNTER, computer.STACK_POINTER, computer.INSTRUCTION_POINTER]
           for index, element in enumerate(register_values):
-               register_values[index] = bcolors.give_blue_text(element)
+               register_values[index] = bcolors.give_blue_text(str(element))
           
           register_table = tabulate([register_values], register_headers, tablefmt="grid")
           
@@ -126,7 +182,7 @@ class display_state:
           if (len(current_instruction) > MAXIMUM_INSTRUCTION_WIDTH_ALLOWED):
                current_instruction = current_instruction[0:MAXIMUM_INSTRUCTION_WIDTH_ALLOWED-2]+"..."
                
-          final_return_output += tabulate([[bcolors.give_blue_text(computer.LINE_NUMBER), bcolors.give_blue_text(current_instruction)]], [bcolors.give_red_text("Current Line"), bcolors.give_red_text("Instruction")], tablefmt="grid")
+          final_return_output += tabulate([[bcolors.give_blue_text(str(computer.LINE_NUMBER)), bcolors.give_blue_text(current_instruction)]], [bcolors.give_red_text("Current Line"), bcolors.give_red_text("Instruction")], tablefmt="grid")
           
           final_return_output += "\n\n" + bcolors.give_yellow_text("ERROR CONSOLE") + "\n"
           final_return_output += tabulate([[bcolors.give_blue_text(computer.LAST_ERROR)]], [bcolors.give_red_text("Error Message")], tablefmt="grid")
@@ -158,7 +214,7 @@ class display_state:
           final_return_output += output
           
           return final_return_output
-          
+     
      @staticmethod
      def give_formatted_table(data_list, header_list, data_color, header_color, max_elements_per_row, is_compact=False):
           if (len(header_list)>0):
@@ -170,11 +226,23 @@ class display_state:
                #coloring the received lists
                COLORED_HEADERS = []
                for index, element in enumerate(header_list):
-                    COLORED_HEADERS.append(header_color(element))
+                    converter = []
+                    if (bcolors.is_string(element)):
+                         converter = element
+                    else:
+                         converter = str(element)
+                         
+                    COLORED_HEADERS.append(header_color(converter))
                
                COLORED_DATA = []
                for index, element in enumerate(data_list):
-                    COLORED_DATA.append(data_color(element))
+                    converter = []
+                    if(bcolors.is_string(element)):
+                         converter = element
+                    else:
+                         converter = str(element)
+                         
+                    COLORED_DATA.append(data_color(converter))
                
                data_width = len(COLORED_DATA)
                if (data_width<width):
@@ -301,42 +369,150 @@ class display_state:
           
           return final_return_output
      
+     '''
      @staticmethod
      def print_screen(is_compact=True):
-          register_string = display_state.give_registers()
-          memory_string = display_state.give_memory()
+          
           console_string = display_state.give_console()
-          stack_string = display_state.give_stack()
-          
           output_string = ""
-          if (is_compact):
-               spaces = "    "
-               line_list = console_string.split("\n") + register_string.split("\n") + stack_string.split("\n")
-               list_len = len(line_list)
-               for index in range(0, list_len):
-                    line_list[index] = spaces + line_list[index] + "\t" 
-               
-               memory_string_row_width = memory_string[len("MEMORY")+2:].find("\n")
-               memory_string_len = memory_string.count("\n")
-               if (list_len > memory_string_len):
-                    line_difference = list_len - memory_string_len
-                    memory_string += (" "*(memory_string_row_width+2) + "\n") * line_difference
-               
-               for element in line_list:
-                    memory_string = memory_string.replace("\n", element, 1)
-               output_string = memory_string.replace("\t", "\n")
-               
+          if (not computer.DISPLAY_CONSOLE_ONLY):
+               register_string = display_state.give_registers()
+               memory_string = display_state.give_memory()
+               stack_string = display_state.give_stack()
+               if (is_compact):
+                    spaces = "    "
+                    line_list = console_string.split("\n") + register_string.split("\n") + stack_string.split("\n")
+                    list_len = len(line_list)
+                    for index in range(0, list_len):
+                         line_list[index] = spaces + line_list[index] + "\t" 
+                    
+                    memory_string_row_width = memory_string[len("MEMORY")+2:].find("\n")
+                    memory_string_len = memory_string.count("\n")
+                    if (list_len > memory_string_len):
+                         line_difference = list_len - memory_string_len
+                         memory_string += (" "*(memory_string_row_width+2) + "\n") * line_difference
+                    
+                    for element in line_list:
+                         memory_string = memory_string.replace("\n", element, 1)
+                    output_string = memory_string.replace("\t", "\n")
+                    
+               else:
+                    output_string += register_string + memory_string + console_string + "\n" + stack_string
+               output_string += display_state.give_instruction_view()
+     
           else:
-               output_string += register_string + memory_string + console_string + "\n" + stack_string
-          
-          output_string += display_state.give_instruction_view()
+               output_string += "\n" + console_string
           
           print(output_string)
+          print("\n<split>")
+     '''
+     @staticmethod
+     def print_screen(is_compact=True):
+          
+          console_string = display_state.give_console()
+          output_string = ""
+          if (not computer.DISPLAY_CONSOLE_ONLY):
+               register_string = display_state.give_registers()
+               memory_string = display_state.give_memory()
+               stack_string = display_state.give_stack()
+               if (is_compact):
+                    spaces = "    "
+                    line_list = console_string.split("\n") + register_string.split("\n") + stack_string.split("\n")
+                    list_len = len(line_list)
+                    for index in range(0, list_len):
+                         line_list[index] = spaces + line_list[index] + "\n" 
+                    
+                    memory_string = memory_string.strip()
+                    memory_string_list = memory_string.split("\n")
+                    memory_string_len = len(memory_string_list) 
+                    
+                    if (list_len < memory_string_len):
+                         for index in range(0, list_len):
+                              memory_string_list[index] = memory_string_list[index] + line_list[index] 
+                    else:
+                         widest_row = len(memory_string_list[0])
+                         #we look for the first instance where the line length is greater than the first line
+                         for element in memory_string_list:
+                              line_len = len(element)
+                              if (line_len>widest_row):
+                                   widest_row = line_len
+                                   break
+                         
+                         line_difference = list_len - memory_string_len
+                         for index in range(0, line_difference):
+                              memory_string_list.append(" "*widest_row)
+
+                         for index in range(0, list_len):
+                              memory_string_list[index] = memory_string_list[index] + line_list[index] 
+                         
+                         for element in memory_string_list:
+                              output_string += element
+                    
+               else:
+                    output_string += register_string + memory_string + console_string + "\n" + stack_string
+               output_string += display_state.give_instruction_view()
+     
+          else:
+               output_string += "\n" + console_string
+          
+          print(output_string)
+          print("\n<split>")
+          
+          
+    #this allows us to throw errors, while keeping track of their count
+     @staticmethod
+     def eprint(is_error, terminate_compilation, *args, **kwargs):
+          #we check what kind of message we are supposed to print, and we identify relevant characteristics
+          counter = display_state.eprint.warning_counter
+          message_type = ["Warning", "warnings"]
+          max_value = computer.MAX_WARNINGS
+          display_message = computer.SHOW_WARNINGS
+          
+          if (is_error):
+               counter = display_state.eprint.error_counter
+               message_type = ["Error", "errors"]
+               max_value = computer.MAX_ERRORS
+               display_message = True
+          
+          #this line keeps track of the fact that 'maxErrors' or 'maxWarnings' or 'display_message' could be 'None'
+          if (max_value is None):
+               max_value = float('inf')
+          if (display_message is None):
+               display_message = True
+          
+          if (display_message):
+               if (counter <= max_value):
+                    print(*args, file=sys.stderr, **kwargs)
+               if (counter == max_value):
+                    print(bcolors.WARNING + message_type[0] + " limit reached. No more " + message_type[1] + " will be printed." + bcolors.ENDC, file=sys.stderr)
+                    if (is_error):
+                         terminate_compilation = True
+               #these variables keep track of how many times this function was called
+               if (counter <= max_value):
+                    if (is_error):
+                         display_state.eprint.error_counter += 1
+                    else:
+                         display_state.eprint.warning_counter +=1 
+                         
+          #we terminate compilation after printing an appropriate error message on the screen.          
+          if (terminate_compilation):
+               print(bcolors.give_red_text("Compilation Terminated."), file=sys.stderr)
+               quit()
+
+
 #||---------------------------------------------||
 #START OF PROGRAM
 #||---------------------------------------------||
-if (not platform_supports_color()):
-     bcolors.make_discolored()
-
+     
+#we receive data from the previous script
 receive_data.fetch_flags()
+if ( computer.WRITE_CONSOLE or (not computer.COLOR_SUPPORTED) ):
+     bcolors.make_discolored()
+     
 receive_data.setup_processor()
+
+#we convert pseduo-regex to regex
+receive_data.make_regex()
+
+#TEST AREA
+display_state.print_screen()

@@ -25,28 +25,27 @@ class computer:
      #NOTE: comments are lines that start with the '#' symbol
      #        COMMAND            FORMAT                        PSEUDO-REGEX                    REGEX
      SYNTAX =  [     
-                    ["LD"   , ["<nnnn>, Ri", "Ri, Rj"]      , ["<nnnn> , Ri", "Ri , Ri"]        ,[]],
-                    ["LDi"  , ["nnnn, Ri"]                  , ["nnnn , Ri"]                     ,[]],
-                    ["SD"   , ["Ri, <nnnn>", "Ri, Rj"]      , ["Ri , <nnnn>", "Ri , Ri"]        ,[]],
-                    ["SDi"  , ["mmmm, <nnnn>", "mmmm, Ri"]  , ["nnnn , <nnnn>", "nnnn , Ri"]    ,[]],
-                    ["ADD"  , ["Ri, Rj, Rk"]                , ["Ri , Ri , Ri"]                  ,[]],
-                    ["ADDi" , ["Ri, nnnn, Rj"]              , ["Ri , nnnn , Ri"]                ,[]],
-                    ["SUB"  , ["Ri, Rj, Rk"]                , ["Ri , Ri , Ri"]                  ,[]],
-                    ["SUBi" , ["Ri, nnnn, Rj"]              , ["Ri , nnnn , Ri"]                ,[]],
-                    ["MUL"  , ["Ri, Rj, Rk"]                , ["Ri , Ri , Ri"]                  ,[]],
-                    ["MULi" , ["Ri, nnnn, Rj"]              , ["Ri , nnnn , Ri"]                ,[]],
-                    ["DIV"  , ["Ri, Rj, Rk"]                , ["Ri , Ri , Ri"]                  ,[]],
-                    ["DIVi" , ["Ri, nnnn, Rj"]              , ["Ri , nnnn , Ri"]                ,[]],
-                    ["JMP"  , ["<label-name>"]              , ["<label-name>"]                  ,[]],
-                    ["JZ"   , ["Ri, <label-name>"]          , ["Ri , <label-name>"]             ,[]],
-                    ["JNZ"  , ["Ri, <label-name>"]          , ["Ri , <label-name>"]             ,[]],
-                    ["JGZ"  , ["Ri, <label-name>"]          , ["Ri , <label-name>"]             ,[]],
-                    ["JGEZ" , ["Ri, <label-name>"]          , ["Ri , <label-name>"]             ,[]],
-                    ["JLZ"  , ["Ri, <label-name>"]          , ["Ri , <label-name>"]             ,[]],
-                    ["JLEZ" , ["Ri, <label-name>"]          , ["Ri , <label-name>"]             ,[]],
-                    ["PUSH" , ["Ri", "nnnn"]                , ["Ri", "nnnn"]                    ,[]],
-                    ["POP"  , ["Ri", "<nnnn>"]              , ["Ri", "<nnnn>"]                  ,[]],
-                    [""     , ["<label-name>:"]             , ["<label-name>:"]                 ,[]]
+                    ["LD"   , ["<nnnn>, Ri", "Ri, Rj"]       , ["<nnnn> , Ri", "Ri , Ri"]        ,[]],
+                    ["LDi"  , ["nnnn, Ri"]                   , ["nnnn , Ri"]                     ,[]],
+                    ["SD"   , ["Ri, <nnnn>", "Ri, Rj"]       , ["Ri , <nnnn>", "Ri , Ri"]        ,[]],
+                    ["SDi"  , ["mmmm, <nnnn>", "mmmm, Ri"]   , ["nnnn , <nnnn>", "nnnn , Ri"]    ,[]],
+                    ["ADD"  , ["Ri, Rj, Rk", "Ri, nnnn, Rk"] , ["Ri , Ri , Ri", "Ri , nnnn , Ri"],[]],
+                    ["SUB"  , ["Ri, Rj, Rk", "Ri, nnnn, Rk"] , ["Ri , Ri , Ri", "Ri , nnnn , Ri"],[]],
+                    ["MUL"  , ["Ri, Rj, Rk", "Ri, nnnn, Rk"] , ["Ri , Ri , Ri", "Ri , nnnn , Ri"],[]],
+                    ["DIV"  , ["Ri, Rj, Rk", "Ri, nnnn, Rk"] , ["Ri , Ri , Ri", "Ri , nnnn , Ri"],[]],
+                    ["JMP"  , ["<label-name>"]               , ["<label-name>"]                  ,[]],
+                    ["JZ"   , ["Ri, <label-name>"]           , ["Ri , <label-name>"]             ,[]],
+                    ["JNZ"  , ["Ri, <label-name>"]           , ["Ri , <label-name>"]             ,[]],
+                    ["MORE" , ["Ri, Rj, Rk", "Ri, nnnn, Rk"] , ["Ri , Ri , Ri", "Ri , nnnn , Ri"],[]],
+                    ["LESS" , ["Ri, Rj, Rk", "Ri, nnnn, Rk"] , ["Ri , Ri , Ri", "Ri , nnnn , Ri"],[]],
+                    ["SAME" , ["Ri, Rj, Rk", "Ri, nnnn, Rk"] , ["Ri , Ri , Ri", "Ri , nnnn , Ri"],[]],
+                    ["AND"  , ["Ri, Rj, Rk", "Ri, nnnn, Rk"] , ["Ri , Ri , Ri", "Ri , nnnn , Ri"],[]],
+                    ["OR"   , ["Ri, Rj, Rk", "Ri, nnnn, Rk"] , ["Ri , Ri , Ri", "Ri , nnnn , Ri"],[]],
+                    ["XOR"  , ["Ri, Rj, Rk", "Ri, nnnn, Rk"] , ["Ri , Ri , Ri", "Ri , nnnn , Ri"],[]],                    
+                    ["NOT"  , ["Ri, Rj", "nnnn, Ri"]         , ["Ri , Ri", "nnnn , Ri"]          ,[]],                         
+                    ["PUSH" , ["Ri", "nnnn"]                 , ["Ri", "nnnn"]                    ,[]],
+                    ["POP"  , ["Ri", "<nnnn>"]               , ["Ri", "<nnnn>"]                  ,[]],
+                    [""     , ["<label-name>:"]              , ["<label-name>:"]                 ,[]]
                ]
      #Program State Registers
      #NOTE: these registers are ADDITIONAL to the registers that the user specified
@@ -369,7 +368,7 @@ class display_state:
           length_of_instructions = 1 if (length_of_instructions==0) else length_of_instructions 
           final_return_output += "\n" + bcolors.give_yellow_text("INSTRUCTION MEMORY (ADDRESS " + str(computer.RAM_COUNT) + "-" + str(computer.RAM_COUNT + length_of_instructions-1) + ")" + "\n")
           
-          MAX_ELEMENTS_PER_ROW = 16
+          MAX_ELEMENTS_PER_ROW = 8
           final_return_output += display_state.give_formatted_table(computer.INSTRUCTION_LIST, computer.INSTRUCTION_LIST, bcolors.give_blue_text, bcolors.give_green_text, MAX_ELEMENTS_PER_ROW, True)
           
           return final_return_output
@@ -426,8 +425,26 @@ class display_state:
           print(output_string)
           print("\n<split>")
           
+     
+     @staticmethod
+     def update_computer(new_instruction):
+          #we update the program counter
+          PROGRAM_COUNTER_INDEX = 5
+          new_pc = new_instruction[5]
+          computer.PROGRAM_COUNTER = new_pc
           
-    #this allows us to throw errors, while keeping track of their count
+          #we update the line number and instruction
+          LINE_NUMBER_AND_INSTRUCTION_INDEX = [0,2]
+          
+          new_line_no = new_instruction[LINE_NUMBER_AND_INSTRUCTION_INDEX[0]]
+          computer.LINE_NUMBER = new_line_no
+          
+          new_instruction_name = new_instruction[LINE_NUMBER_AND_INSTRUCTION_INDEX[1]]
+          computer.INSTRUCTION = new_instruction_name
+          
+          print(new_instruction)
+          
+     #this allows us to throw errors, while keeping track of their count
      @staticmethod
      def eprint(is_error, terminate_compilation, *args, **kwargs):
           #we check what kind of message we are supposed to print, and we identify relevant characteristics
@@ -525,10 +542,34 @@ for index in range(0, error_or_warning_list_len):
           display_state.eprint(is_error, terminate_compilation, error_or_warning_list[index][1])
 
 #we now move on assuming no errors were found in the file being compiled
+label_list = all_lists[1]
+instruction_list = all_lists[2]
 
-#TEST AREA
+#we now go through each instruction, and we find where it is according to the program counter
+beginning_cell_no = computer.RAM_COUNT
+instruction_count = len(instruction_list)
+for index in range(0, instruction_count):
+     instruction_list[index].append(beginning_cell_no)
+     
+     CURR_INSTRUCTION_STRING = instruction_list[index][2]
+     beginning_cell_no += (CURR_INSTRUCTION_STRING.count(",")+1)
+     
+     PARAMETER_LIST_INDEX = 4
+     for element in instruction_list[index][PARAMETER_LIST_INDEX]:
+          MAX_WIDTH_ALLOWED = 12 #(in characters)
+          if (len(element)>MAX_WIDTH_ALLOWED):
+               ELLIPSES = "..."
+               element = element[0:MAX_WIDTH_ALLOWED-len(ELLIPSES)] + ELLIPSES
+          computer.INSTRUCTION_LIST.append(element)
+     
+     INSTRUCTION_TYPE_INDEX = 1
+     if (instruction_list[index][INSTRUCTION_TYPE_INDEX]!=""):
+          beginning_cell_no += 1
 
-#display_state.print_screen()
+#we now start processing each instruction
+for index in range(0, instruction_count):     
+     display_state.update_computer(instruction_list[index])
+     display_state.print_screen()
 
 
 #END OF PROGRAM

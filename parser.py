@@ -291,21 +291,21 @@ class data_type:
      #"defaultProcessor" : displays on screen the default configuration of the processor
      
      #NOTE: it is NOT possible to add another instruction to this list
-global_parameter_list =  [   # PARAMETER NAME      ,      DATA TYPE     ,           DEFAULT          , MIN.,     MAX     ,                            CONDITION                                         CALLS 
-                              ["maxErrors"         , data_type.INT      , float('inf')               , 1    , float('inf'), "'<place-holder-min> <= <place-holder-name> <= <place-holder-max>'"          ,  0],
-                              ["maxWarnings"       , data_type.INT      , float('inf')               , 1    , float('inf'), "'<place-holder-min> <= <place-holder-name> <= <place-holder-max>'"          ,  0],
-                              ["showWarnings"      , data_type.BOOL     , True                       , False, True        , "'<place-holder-name> can only be <place-holder-max> or <place-holder-min>'" ,  0],
-                              ["displayConsoleOnly", data_type.BOOL     , False                      , False, True        , "'<place-holder-name> can only be <place-holder-max> or <place-holder-min>'" ,  0],
-                              ["writeConsole"      , data_type.BOOL     , False                      , False, True        , "'<place-holder-name> can only be <place-holder-max> or <place-holder-min>'" ,  0],
-                              ["executionSpeed"    , data_type.INT      , properties.PROCESSOR_SPEED , 0    , float('inf'), "'<place-holder-min> <= <place-holder-name> <= <place-holder-max>'"          ,  0],
-                              ["version"           , data_type.ONLY_INFO, False                      , None , None        , None                                                                         ,  0],
-                              ["help"              , data_type.ONLY_INFO, False                      , None , None        , None                                                                         ,  0],
-                              ["registerCount"     , data_type.INT      , properties.REGISTER_COUNT  , 4    , float('inf'), "'<place-holder-min> <= <place-holder-name> <= <place-holder-max>'"          ,  0],
-                              ["ramSize"           , data_type.INT      , properties.RAM_COUNT       , 128  , float('inf'), "'<place-holder-min> <= <place-holder-name> <= <place-holder-max>'"          ,  0],
-                              ["stackCount"        , data_type.INT      , properties.STACK_COUNT     , 8    , float('inf'), "'<place-holder-min> <= <place-holder-name> <= <place-holder-max>'"          ,  0],
-                              ["consoleSize"       , data_type.INT      , properties.CONSOLE_COUNT   , 1    , float('inf'), "'<place-holder-min> <= <place-holder-name> <= <place-holder-max>'"          ,  0],
-                              ["defaultProcessor"  , data_type.ONLY_INFO, False , None , None        , None                                                                                              ,  0],
-                              ["16BitMode"         , data_type.BOOL     , False                       , False, True        , "'<place-holder-name> can only be <place-holder-max> or <place-holder-min>"  ,  0]
+global_parameter_list =  [   # PARAMETER NAME      ,      DATA TYPE     ,            VALUES            , MIN.,     MAX     ,                            CONDITION                                         CALLS     DEFAULT 
+                              ["maxErrors"         , data_type.INT      , float('inf')               , 1    , float('inf'), "'<place-holder-min> <= <place-holder-name> <= <place-holder-max>'"          ,  0,    float('inf')],
+                              ["maxWarnings"       , data_type.INT      , float('inf')               , 1    , float('inf'), "'<place-holder-min> <= <place-holder-name> <= <place-holder-max>'"          ,  0,    float('inf')],
+                              ["showWarnings"      , data_type.BOOL     , True                       , False, True        , "'<place-holder-name> can only be <place-holder-max> or <place-holder-min>'" ,  0,    True],
+                              ["displayConsoleOnly", data_type.BOOL     , False                      , False, True        , "'<place-holder-name> can only be <place-holder-max> or <place-holder-min>'" ,  0,    False],
+                              ["writeConsole"      , data_type.BOOL     , False                      , False, True        , "'<place-holder-name> can only be <place-holder-max> or <place-holder-min>'" ,  0,    False],
+                              ["executionSpeed"    , data_type.INT      , properties.PROCESSOR_SPEED , 0    , float('inf'), "'<place-holder-min> <= <place-holder-name> <= <place-holder-max>'"          ,  0,    properties.PROCESSOR_SPEED],
+                              ["version"           , data_type.ONLY_INFO, False                      , None , None        , None                                                                         ,  0,    False],
+                              ["help"              , data_type.ONLY_INFO, False                      , None , None        , None                                                                         ,  0,    False],
+                              ["registerCount"     , data_type.INT      , properties.REGISTER_COUNT  , 4    , float('inf'), "'<place-holder-min> <= <place-holder-name> <= <place-holder-max>'"          ,  0,    properties.REGISTER_COUNT],
+                              ["ramSize"           , data_type.INT      , properties.RAM_COUNT       , 128  , float('inf'), "'<place-holder-min> <= <place-holder-name> <= <place-holder-max>'"          ,  0,    properties.RAM_COUNT],
+                              ["stackCount"        , data_type.INT      , properties.STACK_COUNT     , 8    , float('inf'), "'<place-holder-min> <= <place-holder-name> <= <place-holder-max>'"          ,  0,    properties.STACK_COUNT],
+                              ["consoleSize"       , data_type.INT      , properties.CONSOLE_COUNT   , 1    , float('inf'), "'<place-holder-min> <= <place-holder-name> <= <place-holder-max>'"          ,  0,    properties.CONSOLE_COUNT],
+                              ["defaultProcessor"  , data_type.ONLY_INFO, False , None , None        , None                                                                                              ,  0,    False],
+                              ["16BitMode"         , data_type.BOOL     , False                       , False, True        , "'<place-holder-name> can only be <place-holder-max> or <place-holder-min>"  ,  0,   False]
                          ]
 
     #this allows us to throw errors, while keeping track of their count
@@ -385,6 +385,11 @@ errors = []
 
 parse_errors = properties.parse_parameters(command_line_arguments)
 bounds_errors = properties.check_parameters()
+#we replace any erroneous values with the default value
+for index, element in enumerate(global_parameter_list):
+     if (element[2] is None):
+          global_parameter_list[index][2] = global_parameter_list[index][7]
+     
 processor_errors =  properties.check_processor_settings()
 
 errors = parse_errors + bounds_errors + processor_errors

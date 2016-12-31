@@ -65,6 +65,8 @@ class error_checking:
      
      #Only possible three errors during runtime (in decreasing order of importance)
      #*Division by Zero (FATAL ERROR)
+     #*Stack Overflow (NON-FATAL ERROR)
+     #*Stack Underflow (NON-FATAL ERROR)
      #*Invalid RAM Access (NON-FATAL ERROR)
      #*Integer Overflow (NON-FATAL ERROR)
      def give_ram_address(address, system_settings, line_number):
@@ -177,7 +179,7 @@ class error_checking:
           
           #we make a label list here
           for index, element in enumerate(file_string_list):
-               LABEL_DEFINITION_REGEX_ROW_INDEX = 21
+               LABEL_DEFINITION_REGEX_ROW_INDEX = 20
                label_def_regex = source_list[LABEL_DEFINITION_REGEX_ROW_INDEX][3][0] 
                
                match_object = re.match(label_def_regex, element)
@@ -296,11 +298,12 @@ class error_checking:
                     
                     #we check for static errors
                     #<nnnn>   :    integer overflow, invalid RAM access
+                    register_label = "Ri"
+                    address_label = "<nnnn>"
+                    number_label = "nnnn"
+                    label_label = "<label-name>"
+
                     if (not source_list[regex_match_row][1][0] == "<label-name>:"):
-                         register_label = "Ri"
-                         address_label = "<nnnn>"
-                         number_label = "nnnn"
-                         label_label = "<label-name>"
                          
                          pseduo_regex = source_list[regex_match_row][2][regex_match_col]
                          
@@ -359,8 +362,12 @@ class error_checking:
                                    if (similarity_ratio>=FLOAT_COMPARISON_THRESHOLD):
                                         error_message += error_checking.RED("Did you mean to use the ") + error_checking.YELLOW("'"+label_list[closest_label_index][1]+"'") + error_checking.RED(" label?") + "\n"
                                    error_or_warning_list.append(["error", error_message])
-                                   
+                         
+                         #we add the instruction to the larger list of instructions                                   
+                         current_instruction = ([line_index+1, source_list[regex_match_row][0], element, type_list, element_list])
+                         instruction_list.append(current_instruction)
                         
+                        #we find more errors statically by analyzing inputs to the instructions
                          for element in address_list:
                               output_list = error_checking.give_ram_address(element, system_settings, line_index+1)
                               error_or_warning_list = error_or_warning_list + output_list[1]
@@ -372,6 +379,9 @@ class error_checking:
                          for element in register_list:
                               output_list = error_checking.give_register_index(element, system_settings, line_index+1)
                               error_or_warning_list = error_or_warning_list + output_list[1]
-
+                              
+                    else:
+                         current_instruction = ([line_index+1, source_list[regex_match_row][0], element.replace(" ", ""), [label_label], [element.replace(":", "").strip()]])
+                         instruction_list.append(current_instruction)
                          
           return [error_or_warning_list, label_list, instruction_list]

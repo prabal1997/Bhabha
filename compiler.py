@@ -12,6 +12,7 @@ import support
 import subprocess
 from support import platform_supports_color
 from support import bcolors
+from error_checking import error_checking
  
 #TO-DO:
 #complete flags processor
@@ -22,7 +23,7 @@ class computer:
      #this is the list of all commands
      #NOTE: no labels or comments have been included here; the concept of 'labels' has been hardcoded into the program
      #NOTE: comments are lines that start with the '#' symbol
-     #        COMMAND            FORMAT                        PSEUDO-REGEX
+     #        COMMAND            FORMAT                        PSEUDO-REGEX                    REGEX
      SYNTAX =  [     
                     ["LD"   , ["<nnnn>, Ri", "Ri, Rj"]      , ["<nnnn> , Ri", "Ri , Ri"]        ,[]],
                     ["LDi"  , ["nnnn, Ri"]                  , ["nnnn , Ri"]                     ,[]],
@@ -35,16 +36,17 @@ class computer:
                     ["MUL"  , ["Ri, Rj, Rk"]                , ["Ri , Ri , Ri"]                  ,[]],
                     ["MULi" , ["Ri, nnnn, Rj"]              , ["Ri , nnnn , Ri"]                ,[]],
                     ["DIV"  , ["Ri, Rj, Rk"]                , ["Ri , Ri , Ri"]                  ,[]],
+                    ["DIVi" , ["Ri, nnnn, Rj"]              , ["Ri , nnnn , Ri"]                ,[]],
                     ["JMP"  , ["<label-name>"]              , ["<label-name>"]                  ,[]],
-                    ["JZ"   , ["Ri, <nnnn>"]                , ["Ri , <nnnn>"]                   ,[]],
-                    ["JNZ"  , ["Ri, <nnnn>"]                , ["Ri , <nnnn>"]                   ,[]],
-                    ["JGZ"  , ["Ri, <nnnn>"]                , ["Ri , <nnnn>"]                   ,[]],
-                    ["JGEZ" , ["Ri, <nnnn>"]                , ["Ri , <nnnn>"]                   ,[]],
-                    ["JLZ"  , ["Ri, <nnnn>"]                , ["Ri , <nnnn>"]                   ,[]],
-                    ["JLEZ" , ["Ri, <nnnn>"]                , ["Ri , <nnnn>"]                   ,[]],
+                    ["JZ"   , ["Ri, <label-name>"]          , ["Ri , <label-name>"]             ,[]],
+                    ["JNZ"  , ["Ri, <label-name>"]          , ["Ri , <label-name>"]             ,[]],
+                    ["JGZ"  , ["Ri, <label-name>"]          , ["Ri , <label-name>"]             ,[]],
+                    ["JGEZ" , ["Ri, <label-name>"]          , ["Ri , <label-name>"]             ,[]],
+                    ["JLZ"  , ["Ri, <label-name>"]          , ["Ri , <label-name>"]             ,[]],
+                    ["JLEZ" , ["Ri, <label-name>"]          , ["Ri , <label-name>"]             ,[]],
                     ["PUSH" , ["Ri", "nnnn"]                , ["Ri", "nnnn"]                    ,[]],
-                    ["POP"  , ["Ri"]                        , ["Ri"]                            ,[]],
-                    [""     , ["<label-name>"]              , ["<label-name>:"]                 ,[]]
+                    ["POP"  , ["Ri", "<nnnn>"]              , ["Ri", "<nnnn>"]                  ,[]],
+                    [""     , ["<label-name>:"]             , ["<label-name>:"]                 ,[]]
                ]
      #Program State Registers
      #NOTE: these registers are ADDITIONAL to the registers that the user specified
@@ -81,6 +83,7 @@ class computer:
      DISPLAY_CONSOLE_ONLY = False
      WRITE_CONSOLE = False
      COLOR_SUPPORTED = False
+     HIGH_BIT_MODE = True
      
 #||------------------------------------------------||
 #PARSING FUNCTIONS
@@ -103,6 +106,8 @@ class receive_data:
           computer.STACK_COUNT = int(sys.argv[1+8])
           computer.CONSOLE_COUNT = int(sys.argv[1+9])
           computer.COLOR_SUPPORTED = True if (sys.argv[1+10]=="True") else False
+          computer.FILE_NAME = sys.argv[1+11]
+          computer.HIGH_BIT_MODE = True if (sys.argv[1+12]=="True") else False
           
           display_state.eprint.warning_counter = 1
           display_state.eprint.error_counter = 1
@@ -369,43 +374,6 @@ class display_state:
           
           return final_return_output
      
-     '''
-     @staticmethod
-     def print_screen(is_compact=True):
-          
-          console_string = display_state.give_console()
-          output_string = ""
-          if (not computer.DISPLAY_CONSOLE_ONLY):
-               register_string = display_state.give_registers()
-               memory_string = display_state.give_memory()
-               stack_string = display_state.give_stack()
-               if (is_compact):
-                    spaces = "    "
-                    line_list = console_string.split("\n") + register_string.split("\n") + stack_string.split("\n")
-                    list_len = len(line_list)
-                    for index in range(0, list_len):
-                         line_list[index] = spaces + line_list[index] + "\t" 
-                    
-                    memory_string_row_width = memory_string[len("MEMORY")+2:].find("\n")
-                    memory_string_len = memory_string.count("\n")
-                    if (list_len > memory_string_len):
-                         line_difference = list_len - memory_string_len
-                         memory_string += (" "*(memory_string_row_width+2) + "\n") * line_difference
-                    
-                    for element in line_list:
-                         memory_string = memory_string.replace("\n", element, 1)
-                    output_string = memory_string.replace("\t", "\n")
-                    
-               else:
-                    output_string += register_string + memory_string + console_string + "\n" + stack_string
-               output_string += display_state.give_instruction_view()
-     
-          else:
-               output_string += "\n" + console_string
-          
-          print(output_string)
-          print("\n<split>")
-     '''
      @staticmethod
      def print_screen(is_compact=True):
           
@@ -506,7 +474,7 @@ class display_state:
      
 #we receive data from the previous script
 receive_data.fetch_flags()
-if ( computer.WRITE_CONSOLE or (not computer.COLOR_SUPPORTED) ):
+if (computer.WRITE_CONSOLE or (not computer.COLOR_SUPPORTED)):
      bcolors.make_discolored()
      
 receive_data.setup_processor()
@@ -514,5 +482,50 @@ receive_data.setup_processor()
 #we convert pseduo-regex to regex
 receive_data.make_regex()
 
+#open the file we are supposed to read data from
+read_file = open(computer.FILE_NAME, "r")
+read_file_string = read_file.read()
+
+#error checking here
+system_settings = {
+                   "MAX_ERRORS" : computer.MAX_ERRORS,
+                   "MAX_WARNINGS" : computer.MAX_WARNINGS,
+                   "SHOW_WARNINGS" : computer.SHOW_WARNINGS,
+                   "DISPLAY_CONSOLE_ONLY" : computer.DISPLAY_CONSOLE_ONLY,
+                   "WRITE_CONSOLE" : computer.WRITE_CONSOLE,
+                   "COLOR_SUPPORTED" : computer.COLOR_SUPPORTED,
+                   "HIGH_BIT_MODE" : computer.HIGH_BIT_MODE,
+                   
+                   "REGISTER_COUNT" : computer.REGISTER_COUNT,
+                   "RAM_COUNT" : computer.RAM_COUNT,
+                   "MAX_STACK_COUNT" : computer.STACK_COUNT,
+                   "CURRENT_STACK_SIZE" : computer.CURRENT_STACK_SIZE,
+                   "CONSOLE_COUNT" : computer.CONSOLE_COUNT,
+                   "PROCESSOR_SPEED" : computer.PROCESSOR_SPEED
+                  }
+                   
+all_lists = error_checking.parse_text(read_file_string, computer.SYNTAX, computer.HIGH_BIT_MODE)
+error_or_warning_list = all_lists[0]
+error_or_warning_list_len = len(error_or_warning_list)
+
+error_exists_index = -1
+for index, element in enumerate(error_or_warning_list):
+     if(element[0]=="error"):
+          error_exists_index = index
+
+for index in range(0, error_or_warning_list_len):
+     is_error = True if (error_or_warning_list[index][0]=="error") else False
+     terminate_compilation = False
+     if (index == error_exists_index):
+          terminate_compilation = True
+     display_state.eprint(is_error, terminate_compilation, error_or_warning_list[index][1])
+
+#we now move on assuming no errors were found in the file being compiled
+
 #TEST AREA
-display_state.print_screen()
+
+#display_state.print_screen()
+
+
+#END OF PROGRAM
+read_file.close()

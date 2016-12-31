@@ -474,8 +474,10 @@ class display_state:
      
 #we receive data from the previous script
 receive_data.fetch_flags()
+discolor = False
 if (computer.WRITE_CONSOLE or (not computer.COLOR_SUPPORTED)):
      bcolors.make_discolored()
+     discolor = True
      
 receive_data.setup_processor()
 
@@ -501,10 +503,11 @@ system_settings = {
                    "MAX_STACK_COUNT" : computer.STACK_COUNT,
                    "CURRENT_STACK_SIZE" : computer.CURRENT_STACK_SIZE,
                    "CONSOLE_COUNT" : computer.CONSOLE_COUNT,
-                   "PROCESSOR_SPEED" : computer.PROCESSOR_SPEED
+                   "PROCESSOR_SPEED" : computer.PROCESSOR_SPEED,
+                   "DISCOLOR" : discolor
                   }
                    
-all_lists = error_checking.parse_text(read_file_string, computer.SYNTAX, computer.HIGH_BIT_MODE)
+all_lists = error_checking.parse_text(read_file_string, computer.SYNTAX, system_settings)
 error_or_warning_list = all_lists[0]
 error_or_warning_list_len = len(error_or_warning_list)
 
@@ -514,11 +517,12 @@ for index, element in enumerate(error_or_warning_list):
           error_exists_index = index
 
 for index in range(0, error_or_warning_list_len):
-     is_error = True if (error_or_warning_list[index][0]=="error") else False
-     terminate_compilation = False
-     if (index == error_exists_index):
-          terminate_compilation = True
-     display_state.eprint(is_error, terminate_compilation, error_or_warning_list[index][1])
+     if (error_or_warning_list[index][0]!=""):
+          is_error = True if (error_or_warning_list[index][0]=="error") else False
+          terminate_compilation = False
+          if (index == error_exists_index):
+               terminate_compilation = True
+          display_state.eprint(is_error, terminate_compilation, error_or_warning_list[index][1])
 
 #we now move on assuming no errors were found in the file being compiled
 

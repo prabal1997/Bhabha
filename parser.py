@@ -357,7 +357,7 @@ def eprint(is_error, terminate_compilation, *args, **kwargs):
                     
      #we terminate compilation after printing an appropriate error message on the screen.          
      if (terminate_compilation):
-          print(bcolors.FAIL + "Compilation Terminated." + bcolors.ENDC, file=sys.stderr)
+          print(bcolors.FAIL + "Parsing Terminated." + bcolors.ENDC, file=sys.stderr)
           quit()
 eprint.warning_counter = 1
 eprint.error_counter = 1
@@ -477,22 +477,34 @@ else:
      if (has_errors):
           quit()
      else:
+          #we include errors in the screen to be displayed first
           print(output_string.strip()+"\n")
+          
+          #we wait for user key press
+          raw_input(bcolors.give_yellow_text("Press any key to continue...\n"))
           
           #we now print the output screen at a pace user wants us to
           SCREEN_DISPLAY_PACE_INDEX = 5
           FREQ = global_parameter_list[SCREEN_DISPLAY_PACE_INDEX][2]
           CYCLE_LEN = (1.0/FREQ) if (FREQ>0) else (-1)
           
-          for index, element in enumerate(computer_state_screen_list):
-               if (len(element) != 0):
-                    if (CYCLE_LEN>0):
-                         if (index!=0):
-                              time.sleep(CYCLE_LEN)
-                    else:
-                         raw_input(bcolors.give_yellow_text("Press any key to continue....\n"))
-               if (len(element.strip())>0):
-                    os.system('cls' if os.name=='nt' else 'clear')
-               print(element)
           
+          #we print the console on the screen at an appropriate pace               
+          if (CYCLE_LEN>0):
+               for index, element in enumerate(computer_state_screen_list):
+                    if ("CONSOLE" in element):
+                         print(element)
+                         if(index!=len(computer_state_screen_list)-1):
+                              time.sleep(CYCLE_LEN)
+                              os.system('cls' if os.name=='nt' else 'clear')
+                              
+          else:
+               for index, element in enumerate(computer_state_screen_list):
+                    if ("CONSOLE" in element):
+                         if(index!=0):
+                              raw_input(bcolors.give_yellow_text("Press any key to continue...\n"))
+                              os.system('cls' if os.name=='nt' else 'clear')
+                         print(element)
+               
+
 quit()

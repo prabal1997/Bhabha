@@ -122,6 +122,7 @@ class receive_data:
                computer.REGISTER_VIEW.append(0)
           for index in range(0, computer.RAM_COUNT):
                computer.MEMORY_VIEW.append(0)
+          computer.STACK_POINTER = computer.RAM_COUNT-computer.CONSOLE_COUNT-computer.CURRENT_STACK_SIZE
                
      #this function converts the 'pseduo-regex' to actual regex
      @staticmethod
@@ -170,11 +171,11 @@ class display_state:
      def give_registers():
           final_return_output = ""
           #printing processor state registers
-          register_headers = ["PC", "IP", "SP"]
+          register_headers = ["PC", "SP"]
           for index, element in enumerate(register_headers):
                register_headers[index] = bcolors.give_red_text(element)
           
-          register_values = [computer.PROGRAM_COUNTER, computer.STACK_POINTER, computer.INSTRUCTION_POINTER]
+          register_values = [computer.PROGRAM_COUNTER, computer.STACK_POINTER]
           for index, element in enumerate(register_values):
                register_values[index] = bcolors.give_blue_text(str(element))
           
@@ -196,7 +197,6 @@ class display_state:
           
           acronym_list = [
                          bcolors.give_red_text("PC") + " : " + bcolors.BOLD+"PROGRAM COUNTER"+bcolors.ENDC
-                         ,bcolors.give_red_text("IP") + " : " + bcolors.BOLD+"INSTRUCTION POINTER"+bcolors.ENDC
                          ,bcolors.give_red_text("SP") + " : " + bcolors.BOLD+"STACK POINTER"+bcolors.ENDC
                          ]
           
@@ -434,7 +434,6 @@ class display_state:
                output_string += "\n" + console_string
           
           print(output_string)
-          print("\n<split>")
           
      
      @staticmethod
@@ -471,6 +470,9 @@ class display_state:
                else:
                     error_message = (STACK_OVERFLOW if (STACK_OVERFLOW<error_message) else error_message)
                
+               #we fix the stack pointer
+               computer.STACK_POINTER = computer.RAM_COUNT-computer.CONSOLE_COUNT-computer.CURRENT_STACK_SIZE
+               
                #we return the value we inteded to add, alongside the highest priority error
                return [input_data, error_message]
           
@@ -487,6 +489,9 @@ class display_state:
                else:
                     error_message = STACK_UNDERFLOW if (STACK_UNDERFLOW<error_message) else error_message
                     
+               #we fix the stack pointer
+               computer.STACK_POINTER = computer.RAM_COUNT-computer.CONSOLE_COUNT-computer.CURRENT_STACK_SIZE
+               
                #we return what we received as the value, along with the highest priority error message
                return [popped_value, error_message]
           
@@ -670,9 +675,6 @@ class display_state:
           def return_smaller(input_one, input_two):
                return (input_one if (input_one<input_two) else input_two)
           
-          #we now execute the particular command
-          print(new_instruction)
-          
           line_increment_mode = 1 #1 means normal, 0 means to another specific line number
           new_line_number = 0
           error_message = NO_ERROR
@@ -766,7 +768,14 @@ class display_state:
                data_two = give_value(new_instruction[TYPE_LIST_INDEX][1], new_instruction[ELEMENT_LIST_INDEX][1])
                error_message = return_smaller(data_two[1], error_message)
                
-               sum_var = data_one[0] / data_two[0]
+               sum_var = 0
+               if (data_two[0]==0):
+                    error_message = return_smaller(error_message, FATAL_DIV_BY_ZERO)
+                    FLOAT_ROUDNING_THRESHOLD = 0.0001
+                    sum_var = int(math.pow(2, 16 if (computer.HIGH_BIT_MODE) else 8)+FLOAT_ROUNDING_THRESHOLD)-1
+               else:
+                    sum_var = data_one[0] / data_two[0]                    
+
                data_three = set_value(new_instruction[TYPE_LIST_INDEX][2], new_instruction[ELEMENT_LIST_INDEX][2], sum_var)
                error_message = return_smaller(error_message, data_three[1])
                
@@ -896,7 +905,7 @@ class display_state:
           elif(new_instruction[1]==""):
                var_test = (1+1==2)
           
-          #we now set the latest error message
+          #we now set the latest error message after sorting errors by level of importance
           if (error_message==FATAL_DIV_BY_ZERO):
                computer.LAST_ERROR = "FATAL ERROR: Division by 0"
           elif(error_message==INVALID_ACCESS):
@@ -911,18 +920,11 @@ class display_state:
                computer.LAST_ERROR = "Invalid ASCII Value"
           elif(error_message==NO_ERROR):
                computer.LAST_ERROR = ""
-          
-          ###
-          print(label_list)
-          ###
+     
           return [error_message, [line_increment_mode, new_line_number]]
           
           #in the end, we return the most important error, and the next line number the code should go to
           #which can then be parsed to see if the program needs to stop running
-          '''
-          SORTING ERRORS BY PRIORITY
-          '''
-          
           
      #this allows us to throw errors, while keeping track of their count
      @staticmethod
@@ -961,7 +963,7 @@ class display_state:
                          
           #we terminate compilation after printing an appropriate error message on the screen.          
           if (terminate_compilation):
-               print(bcolors.give_red_text("Compilation Terminated."), file=sys.stderr)
+               print(bcolors.give_red_text("Parsing Terminated."), file=sys.stderr)
                quit()
 
 
@@ -1036,29 +1038,18 @@ for index in range(0, instruction_count):
      CURR_INSTRUCTION_STRING = instruction_list[index][2]
      beginning_cell_no += (CURR_INSTRUCTION_STRING.count(",")+1)
      
-     '''
      PARAMETER_LIST_INDEX = 4
-     for element in instruction_list[index][PARAMETER_LIST_INDEX]:
+     MAX_WIDTH_ALLOWED = 12 #(number of characters)
+     complete_string = instruction_list[index][2]
+     complete_string = complete_string.replace(":","")
+     complete_string = complete_string.replace(","," ")
+     complete_string = complete_string.split(" ")
+     for element in complete_string:
+          ELLIPSES = "..."
           MAX_WIDTH_ALLOWED = 12 #(in characters)
           if (len(element)>MAX_WIDTH_ALLOWED):
-               ELLIPSES = "..."
                element = element[0:MAX_WIDTH_ALLOWED-len(ELLIPSES)] + ELLIPSES
-          computer.INSTRUCTION_LIST.append(element)
-     '''
-     
-     PARAMETER_LIST_INDEX = 4
-     for index in range(0, len(instruction_list)):
-          MAX_WIDTH_ALLOWED = 12 #(number of characters)
-          complete_string = instruction_list[index][2]
-          complete_string.replace(":","")
-          complete_string.replace(","," ")
-          complete_string = complete_string.split(" ")
-          for element in complete_string:
-               ELLIPSES = "..."
-               MAX_WIDTH_ALLOWED = 12 #(in characters)
-               if (len(element)>MAX_WIDTH_ALLOWED):
-                    element = element[0:MAX_WIDTH_ALLOWED-len(ELLIPSES)] + ELLIPSES
-                    
+          if (len(element)>0):
                computer.INSTRUCTION_LIST.append(element)
      
      INSTRUCTION_TYPE_INDEX = 1
@@ -1066,13 +1057,21 @@ for index in range(0, instruction_count):
           beginning_cell_no += 1
 
 index = 0
+has_started = False
 while(index<instruction_count):
      #we assume that no jump statement will occur
      NEW_INDEX = index+1
      
      #we update our computer state
      line_order_state = display_state.update_computer(instruction_list[index], label_list)
+     if (has_started):
+          print("\n<split>")
      display_state.print_screen()
+
+     #we see if a fatal error occurred during the last statement
+     FATAL_DIV_BY_ZERO_KEY = 0
+     if (line_order_state[0]==FATAL_DIV_BY_ZERO_KEY):
+          quit()
      
      #we now see if a jump statement occurred
      CHECK_FOR_JUMP = (line_order_state[1][0]==0)
@@ -1085,4 +1084,10 @@ while(index<instruction_count):
 
      #we increment according to what the last instruction indicated
      index = NEW_INDEX
+     has_started = True
+     
+#INCLUDE:
+#*Interrupt because of FATAL runtime error
 
+#TEST:
+#each runtime error case

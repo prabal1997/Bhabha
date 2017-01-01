@@ -63,12 +63,6 @@ class error_checking:
      #*a value
      #*a list containing errors
      
-     #Only possible three errors during runtime (in decreasing order of importance)
-     #*Division by Zero (FATAL ERROR)
-     #*Stack Overflow (NON-FATAL ERROR)
-     #*Stack Underflow (NON-FATAL ERROR)
-     #*Invalid RAM Access (NON-FATAL ERROR)
-     #*Integer Overflow (NON-FATAL ERROR)
      def give_ram_address(address, system_settings, line_number):
           error_checking.set_parameters(system_settings)
           

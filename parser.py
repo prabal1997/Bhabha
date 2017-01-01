@@ -13,6 +13,7 @@ from support import other_support
 from subprocess import Popen, PIPE
 from tabulate import tabulate
 import os.path
+import time
 
 #we define general properties and settings of the project in this section
      #this class takes care of general properties like names, extensons, processor configuration etc.
@@ -48,6 +49,11 @@ class properties:
           
           properties.getDefaultSettings(False)
           
+          print("\nRefer to the following table to understand the notation used on this page:\n")
+          
+          #the key to understanding syntax
+          print(tabulate([[bcolors.give_green_text("nnnn"),bcolors.give_blue_text(" : an integer (prefix with '0b', '0x', or nothing for binary, hex, or decimal input respectively.")],[bcolors.give_green_text("<nnnn>"),bcolors.give_blue_text(" : an integer interpreted as a RAM address.")], [bcolors.give_green_text("Ri"), bcolors.give_blue_text(" : a register (replace 'i' with the register number).")]], tablefmt="grid"))
+          
           print("\nThe following list displays all the parameters(flags) that Bhabha uses alongside their descriptions:\n")
           
           #we read from the file the required data, and 'decode' it using a caesar-cypher-like technique
@@ -82,7 +88,8 @@ class properties:
                          bcolors.give_green_text("Registers"),
                          bcolors.give_green_text("Stack Size"),
                          bcolors.give_green_text("Console Size"),
-                         bcolors.give_green_text("Processor Frequency")
+                         bcolors.give_green_text("Processor Frequency"),
+                         bcolors.give_green_text("Memory Cell/Register Size")
                       ]
                       
           values =    [
@@ -90,7 +97,8 @@ class properties:
                          bcolors.give_blue_text(str(properties.REGISTER_COUNT) + " bytes"),
                          bcolors.give_blue_text(str(properties.STACK_COUNT) + " bytes"),
                          bcolors.give_blue_text(str(properties.CONSOLE_COUNT) + " characters"),
-                         bcolors.give_blue_text(str(properties.PROCESSOR_SPEED) + " Hertz")
+                         bcolors.give_blue_text(str(properties.PROCESSOR_SPEED) + " Hertz"),
+                         bcolors.give_blue_text("16 Bytes")
                       ]
           if (printHeader):
                print("\n"+bcolors.give_yellow_text("DEFAULT PROCESSOR CONFIGURATION"))            
@@ -305,7 +313,7 @@ global_parameter_list =  [   # PARAMETER NAME      ,      DATA TYPE     ,       
                               ["stackCount"        , data_type.INT      , properties.STACK_COUNT     , 8    , float('inf'), "'<place-holder-min> <= <place-holder-name> <= <place-holder-max>'"          ,  0,    properties.STACK_COUNT],
                               ["consoleSize"       , data_type.INT      , properties.CONSOLE_COUNT   , 1    , float('inf'), "'<place-holder-min> <= <place-holder-name> <= <place-holder-max>'"          ,  0,    properties.CONSOLE_COUNT],
                               ["defaultProcessor"  , data_type.ONLY_INFO, False , None , None        , None                                                                                              ,  0,    False],
-                              ["16BitMode"         , data_type.BOOL     , False                       , False, True        , "'<place-holder-name> can only be <place-holder-max> or <place-holder-min>"  ,  0,   False]
+                              ["16BitMode"         , data_type.BOOL     , True                       , False, True        , "'<place-holder-name> can only be <place-holder-max> or <place-holder-min>"  ,  0,   False]
                          ]
 
     #this allows us to throw errors, while keeping track of their count
@@ -361,6 +369,13 @@ eprint.error_counter = 1
 if (not platform_supports_color()):
      bcolors.make_discolored()
 
+if (len(sys.argv)==2 and sys.argv[1].lower()=="-help"):
+     properties.help()
+     quit()
+
+#we print an empty line to resolve minor formatting issue
+print("")
+
 #extract the filename to be compiled
 file_name = ""
 if (len(sys.argv)<2):
@@ -370,8 +385,12 @@ if (len(sys.argv)<2):
 
 file_name = sys.argv[1]
 if (not ((file_name[::-1])[0:4]==".asm"[::-1])):
-     error_message = bcolors.give_red_text("Error: invalid filename found.")
+     error_message = bcolors.give_red_text("Error: invalid filename detected.")
      error_message = error_message + bcolors.give_red_text("\nExpected ") + bcolors.give_green_text(".asm") + bcolors.give_red_text(" at the end of the input filename ") + bcolors.give_yellow_text("'"+sys.argv[1]+"'") + bcolors.give_red_text(".\n")
+     eprint(True, True, error_message)
+     
+if (len(file_name)<(len(".asm")+1)):
+     error_message = bcolors.give_red_text("Error: filename ") + bcolors.give_yellow_text("'"+file_name+"'") + bcolors.give_red_text(" is too short.\n")
      eprint(True, True, error_message)
 
 if (not os.path.isfile(sys.argv[1])):
@@ -423,8 +442,57 @@ input_data = [sys.executable, "compiler.py"] + input_data + [str(platform_suppor
 cproc = Popen(input_data, stdin=PIPE, stdout=PIPE, stderr=PIPE) #sys.executable is the address where the current script is being ran
 out, err = cproc.communicate()
 
-#processing output received from the assembly parser
-#NOTE: make sure that no INSTRUCTION string when viewed on the console includes a '\t' character or <split> word in it, or your screen might start looking very odd
-print(err)
-print(out)
-#NOTE: do 'writing output to file' here
+#we write the output to file, OR we print it to screen
+output_string = err
+
+#we see if 'stderr' has atleast one error
+has_errors = False
+if (re.match("Error", output_string, re.IGNORECASE)):
+     has_errors = True
+
+computer_state_screen_list = out.split("<split>")
+computer_state_screen = ""
+for element in computer_state_screen_list:
+     computer_state_screen += element
+
+WRITE_CONSOLE_INDEX = 4
+if (global_parameter_list[WRITE_CONSOLE_INDEX][2]):
+     
+     #we only add the output screen if there were no errors
+     if (not has_errors):
+          output_string += computer_state_screen
+
+     #we write the entire output to file, including errors
+     write_file_name = sys.argv[1]
+     write_file_name = write_file_name[::-1]
+     write_file_name = write_file_name.replace(properties.FILE_EXTENSION[::-1], properties.FILE_WRITE_CONSOLE_EXTENSION[::-1], 1)
+     write_file_name = write_file_name[::-1]
+     open_file = open(write_file_name, "w")
+     open_file.write(output_string)
+     
+     #we end the script here
+     quit()
+else:
+          
+     if (has_errors):
+          quit()
+     else:
+          print(output_string.strip()+"\n")
+          
+          #we now print the output screen at a pace user wants us to
+          SCREEN_DISPLAY_PACE_INDEX = 5
+          FREQ = global_parameter_list[SCREEN_DISPLAY_PACE_INDEX][2]
+          CYCLE_LEN = (1.0/FREQ) if (FREQ>0) else (-1)
+          
+          for index, element in enumerate(computer_state_screen_list):
+               if (len(element) != 0):
+                    if (CYCLE_LEN>0):
+                         if (index!=0):
+                              time.sleep(CYCLE_LEN)
+                    else:
+                         raw_input(bcolors.give_yellow_text("Press any key to continue....\n"))
+               if (len(element.strip())>0):
+                    os.system('cls' if os.name=='nt' else 'clear')
+               print(element)
+          
+quit()

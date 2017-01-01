@@ -13,6 +13,8 @@ import subprocess
 from support import platform_supports_color
 from support import bcolors
 from error_checking import error_checking
+from random import randint
+import ctypes
  
 #TO-DO:
 #complete flags processor
@@ -102,7 +104,7 @@ class receive_data:
           computer.PROCESSOR_SPEED = int(sys.argv[1+5])
           computer.REGISTER_COUNT = int(sys.argv[1+6])
           computer.RAM_COUNT = int(sys.argv[1+7])
-          computer.STACK_COUNT = int(sys.argv[1+8])
+          computer.MAX_STACK_COUNT = int(sys.argv[1+8])
           computer.CONSOLE_COUNT = int(sys.argv[1+9])
           computer.COLOR_SUPPORTED = True if (sys.argv[1+10]=="True") else False
           computer.FILE_NAME = sys.argv[1+11]
@@ -332,6 +334,14 @@ class display_state:
      #this function displays the contents of the console on the screen
      @staticmethod
      def give_console():
+          computer.CONSOLE_VIEW = []
+          for index in range(computer.RAM_COUNT-computer.CONSOLE_COUNT, computer.RAM_COUNT):
+               number_of_ASCII_characters = 256
+               char_order = (computer.MEMORY_VIEW[index]%number_of_ASCII_characters)
+               actual_char = ""+("" if (char_order==0) else chr(char_order))+""
+               actual_char = unicode(actual_char, errors='ignore')
+               computer.CONSOLE_VIEW.append(actual_char if computer.MEMORY_VIEW[index]!=0 else "")
+          
           final_return_output = ""
           final_return_output += bcolors.give_yellow_text("\nTEXT CONSOLE\n")
           
@@ -382,6 +392,7 @@ class display_state:
                register_string = display_state.give_registers()
                memory_string = display_state.give_memory()
                stack_string = display_state.give_stack()
+               
                if (is_compact):
                     spaces = "    "
                     line_list = console_string.split("\n") + register_string.split("\n") + stack_string.split("\n")
@@ -427,7 +438,220 @@ class display_state:
           
      
      @staticmethod
-     def update_computer(new_instruction):
+     def update_computer(new_instruction, label_list):
+          #ERROR CODES in order of priority (smaller index means higher priority)
+          FATAL_DIV_BY_ZERO = 0
+          INVALID_ACCESS = 1
+          STACK_OVERFLOW = 2
+          STACK_UNDERFLOW = 3
+          INT_OVERFLOW = 4
+          INCORRECT_CHAR = 5
+          NO_ERROR = 6
+          
+          '''
+          STACK PUSH AND POP FUNCTIONS
+          '''
+          def push(input_data):
+               #we setup the error message
+               error_message = NO_ERROR
+               
+               #we find the equivalent data of the possible input string
+               input_data = give_int(input_data)
+               
+               #we separate the error and the data
+               error_message = input_data[1] if (input_data[1]<error_message) else error_message
+               input_data = input_data[0]
+               
+               #we try to push the data, and if we can't, we give an error message
+               if (computer.CURRENT_STACK_SIZE<computer.MAX_STACK_COUNT):
+                    computer.CURRENT_STACK_SIZE += 1
+                    
+                    ram_index_to_modify = computer.RAM_COUNT-computer.CONSOLE_COUNT-computer.CURRENT_STACK_SIZE
+                    computer.MEMORY_VIEW[ram_index_to_modify] = input_data
+               else:
+                    error_message = (STACK_OVERFLOW if (STACK_OVERFLOW<error_message) else error_message)
+               
+               #we return the value we inteded to add, alongside the highest priority error
+               return [input_data, error_message]
+          
+          def pop():
+               #we setup the error message
+               error_message = NO_ERROR
+               
+               #we pop the stack if it has more than a single element, otherwise we only return the only value on the stack
+               ram_index = computer.RAM_COUNT-computer.CONSOLE_COUNT-computer.CURRENT_STACK_SIZE
+               popped_value = computer.MEMORY_VIEW[ram_index]
+               
+               if(computer.CURRENT_STACK_SIZE>=2):
+                    computer.CURRENT_STACK_SIZE -= 1
+               else:
+                    error_message = STACK_UNDERFLOW if (STACK_UNDERFLOW<error_message) else error_message
+                    
+               #we return what we received as the value, along with the highest priority error message
+               return [popped_value, error_message]
+          
+          '''
+          >>> import ctypes
+          >>> m = 0xFFFFFF00
+          >>> ctypes.c_uint32(~m).value
+          255L
+          '''
+          
+          '''
+          COMPUTER FUNCTIONS
+          '''
+          def give_int(input_data):
+               #we check if the input is a string
+               if (not (isinstance(input_data, str) or isinstance(input_data, unicode))):
+                    input_data = str(input_data)
+               
+               #we setup the error code to be sent
+               error_message = NO_ERROR
+               
+               #we separate the sign from the number
+               sign = +1
+               if(input_data[0]=='-'):
+                    sign = -1
+               if(not input_data[0].isdigit()):
+                    input_data = input_data[1:]
+               
+               #we convert the number to integer base
+               if (input_data[0:2]=="0b"):
+                    input_data = input_data[2:]
+                    input_data = int(input_data, 2)
+               elif (input_data[0:2]=="0x"):
+                    input_data = input_data[2:]
+                    input_data = int(input_data, 16)
+               else:
+                    input_data = int(input_data)
+                    
+               #we combine the sign with the number
+               input_data = sign*input_data
+               
+               #we make the number unsigned
+               FLOAT_COMPARISON_THRESHOLD = 0.0001
+               unique_numbers = int(math.pow(2, 16 if (computer.HIGH_BIT_MODE) else 8) + FLOAT_COMPARISON_THRESHOLD)
+               new_input_data = input_data%unique_numbers
+               
+               #we return the calculated value, and the highest priority error
+               if (input_data!=new_input_data):
+                    error_message = INT_OVERFLOW
+                    
+               return [new_input_data, error_message]
+          
+          def give_ram_data(ram_cell_index):
+               #we set up our error message for any possible errors
+               error_message = NO_ERROR
+               
+               #we simplify the received integer
+               ram_cell_index = give_int(ram_cell_index)
+               
+               error_message = ram_cell_index[1] if (ram_cell_index[1]<error_message) else error_message
+               ram_cell_index = ram_cell_index[1]
+               
+               #we see if the new index is within the acceptable ram indices
+               new_ram_cell_index = (ram_cell_index%computer.RAM_COUNT)
+               if (new_ram_cell_index!=ram_cell_index):
+                    error_message = (INVALID_ACCESS if (INVALID_ACCESS<error_message) else error_message)
+               
+               #we return the value, along with the highest-priority error
+               output_int = computer.MEMORY_VIEW[new_ram_cell_index]
+               return [output_int, error_message]
+               
+          def set_ram_data(ram_cell_index, input_data):
+               #we set up our error message for any possible errors
+               error_message = NO_ERROR
+               
+               #we simplify the received integer
+               ram_cell_index = give_int(ram_cell_index)
+               
+               error_message = ram_cell_index[1] if (ram_cell_index[1]<error_message) else error_message
+               ram_cell_index = ram_cell_index[0]
+               
+               #we see if the new index is within the acceptable ram indices
+               new_ram_cell_index = (ram_cell_index%computer.RAM_COUNT)
+               if (new_ram_cell_index!=ram_cell_index):
+                    error_message = (INVALID_ACCESS if (INVALID_ACCESS<error_message) else error_message)
+
+               #we convert the received data into a bouded unsigned integer
+               input_data = give_int(input_data)
+          
+               error_message = (input_data[1] if (input_data[1]<error_message) else error_message)
+               input_data = input_data[0]
+               
+               #we set the ram cell to the value we calculated
+               computer.MEMORY_VIEW[new_ram_cell_index] = input_data
+               
+               #we return the value that we set the ram cell equal to, along with the highest-priority error
+               return [input_data, error_message]
+               
+          def give_register_data(register_name):
+               register_index = register_name[1:]
+               register_index = int(register_index)-1
+               
+               register_value = computer.REGISTER_VIEW[register_index]
+               return [register_value, NO_ERROR]
+          
+          def set_register_data(register_name, input_int):
+               register_index = register_name[1:]
+               register_index = int(register_index)-1
+               
+               input_int = give_int(input_int)
+               computer.REGISTER_VIEW[register_index] = input_int[0]
+               
+               error_message = NO_ERROR
+               error_message = input_int[1] if (input_int[1]<error_message) else error_message
+
+               return [input_int[0], error_message]
+          
+          def set_value(data_type, input_address, input_data):
+               #we set up an error message
+               error_message = NO_ERROR
+               
+               #different label styles for different possible data-types
+               register_format = "Ri"
+               pointer_format = "<nnnn>"
+
+               #we identify the type of data
+               output_list = []
+               for element in [[register_format, set_register_data], [pointer_format, set_ram_data]]:
+                    if(element[0]==data_type):
+                         output_list = element[1](input_address, input_data) 
+                         break
+               
+               #separating the error and the value that we set the register/ram cell equal to
+               error_message = (output_list[1] if (output_list[1]<error_message) else error_message)
+               output_list = output_list[1]
+               
+               #we return the value that we set the register equals to, and we also return the error with the highest priority
+               return [output_list, error_message]
+               
+          def give_value(data_type, input_data):
+               #different label styles for different possible data-types
+               register_format = "Ri"
+               pointer_format = "<nnnn>"
+               integer_format = "nnnn"
+               
+               output = 0
+               error_message = NO_ERROR
+               
+               #we identify the type of data, and we then find what its value is
+               output_list = []
+               for element in [[register_format, give_register_data], [pointer_format, give_ram_data], [integer_format, give_int]]:
+                    if (data_type==element[0]):
+                         output_list = element[1](input_data)
+                         break
+               
+               #we separate the output and the error code
+               output = output_list[0]
+               error_message = (output_list[1] if (output_list[1]<error_message) else error_message)
+               
+               #we return the data
+               return [output, error_message]
+     
+          #we clear the previous error that was shown by our computer
+          computer.LAST_ERROR = ""
+     
           #we update the program counter
           PROGRAM_COUNTER_INDEX = 5
           new_pc = new_instruction[5]
@@ -442,7 +666,263 @@ class display_state:
           new_instruction_name = new_instruction[LINE_NUMBER_AND_INSTRUCTION_INDEX[1]]
           computer.INSTRUCTION = new_instruction_name
           
+          #we make a function that compares two integers, and returns the smaller one
+          def return_smaller(input_one, input_two):
+               return (input_one if (input_one<input_two) else input_two)
+          
+          #we now execute the particular command
           print(new_instruction)
+          
+          line_increment_mode = 1 #1 means normal, 0 means to another specific line number
+          new_line_number = 0
+          error_message = NO_ERROR
+          
+          TYPE_LIST_INDEX = 3
+          ELEMENT_LIST_INDEX = 4
+          
+          if (new_instruction[1]=="JMP"):
+               line_increment_mode = 0
+               
+               LABEL_NAME_INDEX_IN_PARAMETER_LIST = 0
+               label_name = new_instruction[ELEMENT_LIST_INDEX][LABEL_NAME_INDEX_IN_PARAMETER_LIST]
+               
+               for element in label_list:
+                    if (element[1]==label_name):
+                         new_line_number = element[0]
+                         break
+               
+          elif(new_instruction[1]=="JZ"):
+               LABEL_NAME_INDEX_IN_PARAMETER_LIST = 1
+               label_name = new_instruction[ELEMENT_LIST_INDEX][LABEL_NAME_INDEX_IN_PARAMETER_LIST]
+               
+               register_value = give_value(new_instruction[TYPE_LIST_INDEX][0], new_instruction[ELEMENT_LIST_INDEX][0])
+               register_value = register_value[0]
+               
+               if (register_value==0):
+                    line_increment_mode = 0
+                    for element in label_list:
+                         if (element[1]==label_name):
+                              new_line_number = element[0]
+                              break
+                                        
+          elif(new_instruction[1]=="JNZ"):
+               LABEL_NAME_INDEX_IN_PARAMETER_LIST = 1
+               label_name = new_instruction[ELEMENT_LIST_INDEX][LABEL_NAME_INDEX_IN_PARAMETER_LIST]
+               
+               register_value = give_value(new_instruction[TYPE_LIST_INDEX][0], new_instruction[ELEMENT_LIST_INDEX][0])
+               register_value = register_value[0]
+               
+               if (register_value!=0):
+                    line_increment_mode = 0
+                    for element in label_list:
+                         if (element[1]==label_name):
+                              new_line_number = element[0]
+                              break
+               
+          elif(new_instruction[1]=="LD" or new_instruction[1]=="LDi" or new_instruction[1]=="SD" or new_instruction[1]=="SDi"):
+               data = give_value(new_instruction[TYPE_LIST_INDEX][0], new_instruction[ELEMENT_LIST_INDEX][0])
+               error_message = return_smaller(data[1], error_message)
+               
+               data = set_value(new_instruction[TYPE_LIST_INDEX][1], new_instruction[ELEMENT_LIST_INDEX][1], data[0])               
+               error_message = return_smaller(data[1], error_message)
+
+          elif(new_instruction[1]=="ADD"):
+               data_one = give_value(new_instruction[TYPE_LIST_INDEX][0], new_instruction[ELEMENT_LIST_INDEX][0])
+               error_message = return_smaller(data_one[1], error_message)
+               
+               data_two = give_value(new_instruction[TYPE_LIST_INDEX][1], new_instruction[ELEMENT_LIST_INDEX][1])
+               error_message = return_smaller(data_two[1], error_message)
+               
+               sum_var = data_one[0] + data_two[0]
+               data_three = set_value(new_instruction[TYPE_LIST_INDEX][2], new_instruction[ELEMENT_LIST_INDEX][2], sum_var)
+               error_message = return_smaller(error_message, data_three[1])
+               
+          elif(new_instruction[1]=="SUB"):
+               data_one = give_value(new_instruction[TYPE_LIST_INDEX][0], new_instruction[ELEMENT_LIST_INDEX][0])
+               error_message = return_smaller(data_one[1], error_message)
+               
+               data_two = give_value(new_instruction[TYPE_LIST_INDEX][1], new_instruction[ELEMENT_LIST_INDEX][1])
+               error_message = return_smaller(data_two[1], error_message)
+               
+               sum_var = data_one[0] - data_two[0]
+               data_three = set_value(new_instruction[TYPE_LIST_INDEX][2], new_instruction[ELEMENT_LIST_INDEX][2], sum_var)
+               error_message = return_smaller(error_message, data_three[1])
+               
+          elif(new_instruction[1]=="MUL"):
+               data_one = give_value(new_instruction[TYPE_LIST_INDEX][0], new_instruction[ELEMENT_LIST_INDEX][0])
+               error_message = return_smaller(data_one[1], error_message)
+               
+               data_two = give_value(new_instruction[TYPE_LIST_INDEX][1], new_instruction[ELEMENT_LIST_INDEX][1])
+               error_message = return_smaller(data_two[1], error_message)
+               
+               sum_var = data_one[0] * data_two[0]
+               data_three = set_value(new_instruction[TYPE_LIST_INDEX][2], new_instruction[ELEMENT_LIST_INDEX][2], sum_var)
+               error_message = return_smaller(error_message, data_three[1])
+               
+          elif(new_instruction[1]=="DIV"):
+               data_one = give_value(new_instruction[TYPE_LIST_INDEX][0], new_instruction[ELEMENT_LIST_INDEX][0])
+               error_message = return_smaller(data_one[1], error_message)
+               
+               data_two = give_value(new_instruction[TYPE_LIST_INDEX][1], new_instruction[ELEMENT_LIST_INDEX][1])
+               error_message = return_smaller(data_two[1], error_message)
+               
+               sum_var = data_one[0] / data_two[0]
+               data_three = set_value(new_instruction[TYPE_LIST_INDEX][2], new_instruction[ELEMENT_LIST_INDEX][2], sum_var)
+               error_message = return_smaller(error_message, data_three[1])
+               
+          elif(new_instruction[1]=="MORE"):
+               data_one = give_value(new_instruction[TYPE_LIST_INDEX][0], new_instruction[ELEMENT_LIST_INDEX][0])
+               error_message = return_smaller(data_one[1], error_message)
+               
+               data_two = give_value(new_instruction[TYPE_LIST_INDEX][1], new_instruction[ELEMENT_LIST_INDEX][1])
+               error_message = return_smaller(data_two[1], error_message)
+               
+               sum_var = (1 if (data_one[0] > data_two[0]) else 0)
+               data_three = set_value(new_instruction[TYPE_LIST_INDEX][2], new_instruction[ELEMENT_LIST_INDEX][2], sum_var)
+               error_message = return_smaller(error_message, data_three[1])
+          
+          elif(new_instruction[1]=="LESS"):
+               data_one = give_value(new_instruction[TYPE_LIST_INDEX][0], new_instruction[ELEMENT_LIST_INDEX][0])
+               error_message = return_smaller(data_one[1], error_message)
+               
+               data_two = give_value(new_instruction[TYPE_LIST_INDEX][1], new_instruction[ELEMENT_LIST_INDEX][1])
+               error_message = return_smaller(data_two[1], error_message)
+               
+               sum_var = (1 if (data_one[0] < data_two[0]) else 0)
+               data_three = set_value(new_instruction[TYPE_LIST_INDEX][2], new_instruction[ELEMENT_LIST_INDEX][2], sum_var)
+               error_message = return_smaller(error_message, data_three[1])
+          
+          elif(new_instruction[1]=="SAME"):
+               data_one = give_value(new_instruction[TYPE_LIST_INDEX][0], new_instruction[ELEMENT_LIST_INDEX][0])
+               error_message = return_smaller(data_one[1], error_message)
+               
+               data_two = give_value(new_instruction[TYPE_LIST_INDEX][1], new_instruction[ELEMENT_LIST_INDEX][1])
+               error_message = return_smaller(data_two[1], error_message)
+               
+               sum_var = (1 if (data_one[0] == data_two[0]) else 0)
+               data_three = set_value(new_instruction[TYPE_LIST_INDEX][2], new_instruction[ELEMENT_LIST_INDEX][2], sum_var)
+               error_message = return_smaller(error_message, data_three[1])
+               
+          elif(new_instruction[1]=="AND"):
+               integer_input_one = give_value(new_instruction[TYPE_LIST_INDEX][0], new_instruction[ELEMENT_LIST_INDEX][0])
+               error_message = return_smaller(integer_input_one[1], error_message)
+               
+               integer_input_two = give_value(new_instruction[TYPE_LIST_INDEX][1], new_instruction[ELEMENT_LIST_INDEX][1])
+               error_message = return_smaller(integer_input_two[1], error_message)
+               
+               caster = ""
+               if (computer.HIGH_BIT_MODE):
+                    caster = ctypes.c_uint16
+               else:
+                    caster = ctypes.c_uint8
+                    
+               integer_input_one = caster(integer_input_one).value
+               integer_input_two = caster(integer_input_two).value
+               integer_output = caster(integer_input_one & integer_input_two).value
+               
+               integer_output_set = set_value(new_instruction[TYPE_LIST_INDEX][2], new_instruction[ELEMENT_LIST_INDEX][2], integer_output)
+               error_message = return_smaller(error_message, integer_output_set[1])
+               
+          elif(new_instruction[1]=="OR"):
+               integer_input_one = give_value(new_instruction[TYPE_LIST_INDEX][0], new_instruction[ELEMENT_LIST_INDEX][0])
+               error_message = return_smaller(integer_input_one[1], error_message)
+               
+               integer_input_two = give_value(new_instruction[TYPE_LIST_INDEX][1], new_instruction[ELEMENT_LIST_INDEX][1])
+               error_message = return_smaller(integer_input_two[1], error_message)
+               
+               caster = ""
+               if (computer.HIGH_BIT_MODE):
+                    caster = ctypes.c_uint16
+               else:
+                    caster = ctypes.c_uint8
+                    
+               integer_input_one = caster(integer_input_one).value
+               integer_input_two = caster(integer_input_two).value
+               integer_output = caster(integer_input_one | integer_input_two).value
+               
+               integer_output_set = set_value(new_instruction[TYPE_LIST_INDEX][2], new_instruction[ELEMENT_LIST_INDEX][2], integer_output)
+               error_message = return_smaller(error_message, integer_output_set[1])
+
+          elif(new_instruction[1]=="XOR"):
+               integer_input_one = give_value(new_instruction[TYPE_LIST_INDEX][0], new_instruction[ELEMENT_LIST_INDEX][0])
+               error_message = return_smaller(integer_input_one[1], error_message)
+               
+               integer_input_two = give_value(new_instruction[TYPE_LIST_INDEX][1], new_instruction[ELEMENT_LIST_INDEX][1])
+               error_message = return_smaller(integer_input_two[1], error_message)
+               
+               caster = ""
+               if (computer.HIGH_BIT_MODE):
+                    caster = ctypes.c_uint16
+               else:
+                    caster = ctypes.c_uint8
+                    
+               integer_input_one = caster(integer_input_one).value
+               integer_input_two = caster(integer_input_two).value
+               integer_output = caster(integer_input_one ^ integer_input_two).value
+               
+               integer_output_set = set_value(new_instruction[TYPE_LIST_INDEX][2], new_instruction[ELEMENT_LIST_INDEX][2], integer_output)
+               error_message = return_smaller(error_message, integer_output_set[1])
+               
+          elif(new_instruction[1]=="NOT"):
+               integer_input_one = give_value(new_instruction[TYPE_LIST_INDEX][0], new_instruction[ELEMENT_LIST_INDEX][0])
+               error_message = return_smaller(integer_input_one[1], error_message)
+               
+               caster = ""
+               if (computer.HIGH_BIT_MODE):
+                    caster = ctypes.c_uint16
+               else:
+                    caster = ctypes.c_uint8
+                    
+               integer_input_one = caster(integer_input_one).value
+               integer_output = caster(~integer_input_one).value
+               
+               integer_output_set = set_value(new_instruction[TYPE_LIST_INDEX][1], new_instruction[ELEMENT_LIST_INDEX][1], integer_output)
+               error_message = return_smaller(error_message, integer_output_set[1])
+               
+          elif(new_instruction[1]=="PUSH"):
+               data_one = give_value(new_instruction[TYPE_LIST_INDEX][0], new_instruction[ELEMENT_LIST_INDEX][0])
+               error_message = return_smaller(error_message, data_one[1])
+               
+               push_data = push(data_one[0])
+               error_message = return_smaller(error_message, push_data[1])
+               
+          elif(new_instruction[1]=="POP"):
+               pop_var = pop()
+               error_message = return_smaller(error_message, pop_var[1])
+               
+               stack_data = set_value(new_instruction[TYPE_LIST_INDEX][0], new_instruction[ELEMENT_LIST_INDEX][0], pop_var[1])
+               error_message = return_smaller(error_message, stack_data[1])
+          
+          elif(new_instruction[1]==""):
+               var_test = (1+1==2)
+          
+          #we now set the latest error message
+          if (error_message==FATAL_DIV_BY_ZERO):
+               computer.LAST_ERROR = "FATAL ERROR: Division by 0"
+          elif(error_message==INVALID_ACCESS):
+               computer.LAST_ERROR = "Invalid RAM Access Occurred"
+          elif(error_message==STACK_OVERFLOW):
+               computer.LAST_ERROR = "Stack Overflow"
+          elif(error_message==STACK_UNDERFLOW):
+               computer.LAST_ERROR = "Stack Underflow"
+          elif(error_message==INT_OVERFLOW):
+               computer.LAST_ERROR = "Integer Overflow"
+          elif(error_message==INCORRECT_CHAR):
+               computer.LAST_ERROR = "Invalid ASCII Value"
+          elif(error_message==NO_ERROR):
+               computer.LAST_ERROR = ""
+          
+          ###
+          print(label_list)
+          ###
+          return [error_message, [line_increment_mode, new_line_number]]
+          
+          #in the end, we return the most important error, and the next line number the code should go to
+          #which can then be parsed to see if the program needs to stop running
+          '''
+          SORTING ERRORS BY PRIORITY
+          '''
+          
           
      #this allows us to throw errors, while keeping track of their count
      @staticmethod
@@ -490,6 +970,7 @@ class display_state:
 #||---------------------------------------------||
      
 #we receive data from the previous script
+
 receive_data.fetch_flags()
 discolor = False
 if (computer.WRITE_CONSOLE or (not computer.COLOR_SUPPORTED)):
@@ -504,6 +985,7 @@ receive_data.make_regex()
 #open the file we are supposed to read data from
 read_file = open(computer.FILE_NAME, "r")
 read_file_string = read_file.read()
+read_file.close()
 
 #error checking here
 system_settings = {
@@ -517,7 +999,7 @@ system_settings = {
                    
                    "REGISTER_COUNT" : computer.REGISTER_COUNT,
                    "RAM_COUNT" : computer.RAM_COUNT,
-                   "MAX_STACK_COUNT" : computer.STACK_COUNT,
+                   "MAX_STACK_COUNT" : computer.MAX_STACK_COUNT,
                    "CURRENT_STACK_SIZE" : computer.CURRENT_STACK_SIZE,
                    "CONSOLE_COUNT" : computer.CONSOLE_COUNT,
                    "PROCESSOR_SPEED" : computer.PROCESSOR_SPEED,
@@ -554,6 +1036,7 @@ for index in range(0, instruction_count):
      CURR_INSTRUCTION_STRING = instruction_list[index][2]
      beginning_cell_no += (CURR_INSTRUCTION_STRING.count(",")+1)
      
+     '''
      PARAMETER_LIST_INDEX = 4
      for element in instruction_list[index][PARAMETER_LIST_INDEX]:
           MAX_WIDTH_ALLOWED = 12 #(in characters)
@@ -561,16 +1044,45 @@ for index in range(0, instruction_count):
                ELLIPSES = "..."
                element = element[0:MAX_WIDTH_ALLOWED-len(ELLIPSES)] + ELLIPSES
           computer.INSTRUCTION_LIST.append(element)
+     '''
+     
+     PARAMETER_LIST_INDEX = 4
+     for index in range(0, len(instruction_list)):
+          MAX_WIDTH_ALLOWED = 12 #(number of characters)
+          complete_string = instruction_list[index][2]
+          complete_string.replace(":","")
+          complete_string.replace(","," ")
+          complete_string = complete_string.split(" ")
+          for element in complete_string:
+               ELLIPSES = "..."
+               MAX_WIDTH_ALLOWED = 12 #(in characters)
+               if (len(element)>MAX_WIDTH_ALLOWED):
+                    element = element[0:MAX_WIDTH_ALLOWED-len(ELLIPSES)] + ELLIPSES
+                    
+               computer.INSTRUCTION_LIST.append(element)
      
      INSTRUCTION_TYPE_INDEX = 1
      if (instruction_list[index][INSTRUCTION_TYPE_INDEX]!=""):
           beginning_cell_no += 1
 
-#we now start processing each instruction
-for index in range(0, instruction_count):     
-     display_state.update_computer(instruction_list[index])
+index = 0
+while(index<instruction_count):
+     #we assume that no jump statement will occur
+     NEW_INDEX = index+1
+     
+     #we update our computer state
+     line_order_state = display_state.update_computer(instruction_list[index], label_list)
      display_state.print_screen()
+     
+     #we now see if a jump statement occurred
+     CHECK_FOR_JUMP = (line_order_state[1][0]==0)
+     if (CHECK_FOR_JUMP):
+          for order, element in enumerate(instruction_list):
+               LINE_NUMBER_HOLDING_INDEX = 1
+               LABEL_LINE_NUMBER = line_order_state[1][LINE_NUMBER_HOLDING_INDEX]
+               if (element[0]==LABEL_LINE_NUMBER):
+                    NEW_INDEX = order  
 
+     #we increment according to what the last instruction indicated
+     index = NEW_INDEX
 
-#END OF PROGRAM
-read_file.close()

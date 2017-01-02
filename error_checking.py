@@ -336,7 +336,7 @@ class error_checking:
                          for idx_1 in range(0, label_count):
                               for idx_2 in range(0, label_list_len):
                                    if (local_label_list[idx_1].strip()==label_list[idx_2][1]):
-                                        label_list[idx][2] += 1
+                                        label_list[idx_2][2] += 1
                                    
                          #We now process all the elements in each list to give errors
                          for idx_1 in range(0, label_count):

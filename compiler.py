@@ -67,7 +67,7 @@ class computer:
      REGISTER_COUNT                = 8
      RAM_COUNT                     = 256
      MAX_STACK_COUNT               = 8
-     CURRENT_STACK_SIZE            = 1      
+     CURRENT_STACK_SIZE            = 0      
      CONSOLE_COUNT                 = 8
      PROCESSOR_SPEED               = 1
      
@@ -374,13 +374,23 @@ class display_state:
      def give_instruction_view():
           final_return_output = ""
           
+          INSTRUCTION_LIST = computer.INSTRUCTION_LIST
+          print_ellipses = False
+          if (len(INSTRUCTION_LIST)>16):
+               print_ellipses = True
+               INSTRUCTION_LIST = INSTRUCTION_LIST[0:16]
+               
           length_of_instructions = len(computer.INSTRUCTION_LIST)
+          
           length_of_instructions = 1 if (length_of_instructions==0) else length_of_instructions 
           final_return_output += "\n" + bcolors.give_yellow_text("INSTRUCTION MEMORY (ADDRESS " + str(computer.RAM_COUNT) + "-" + str(computer.RAM_COUNT + length_of_instructions-1) + ")" + "\n")
           
           MAX_ELEMENTS_PER_ROW = 8
-          final_return_output += display_state.give_formatted_table(computer.INSTRUCTION_LIST, computer.INSTRUCTION_LIST, bcolors.give_blue_text, bcolors.give_green_text, MAX_ELEMENTS_PER_ROW, True)
+          final_return_output += display_state.give_formatted_table(INSTRUCTION_LIST, INSTRUCTION_LIST, bcolors.give_blue_text, bcolors.give_green_text, MAX_ELEMENTS_PER_ROW, True)
           
+          if (print_ellipses):
+               final_return_output = final_return_output.strip() + "\n.\n.\n."  
+               
           return final_return_output
      
      @staticmethod
@@ -484,7 +494,7 @@ class display_state:
                ram_index = computer.RAM_COUNT-computer.CONSOLE_COUNT-computer.CURRENT_STACK_SIZE
                popped_value = computer.MEMORY_VIEW[ram_index]
                
-               if(computer.CURRENT_STACK_SIZE>=2):
+               if(computer.CURRENT_STACK_SIZE>=1):
                     computer.CURRENT_STACK_SIZE -= 1
                else:
                     error_message = STACK_UNDERFLOW if (STACK_UNDERFLOW<error_message) else error_message
@@ -529,7 +539,6 @@ class display_state:
                     input_data = int(input_data, 16)
                else:
                     input_data = int(input_data)
-                    
                #we combine the sign with the number
                input_data = sign*input_data
                
@@ -545,6 +554,7 @@ class display_state:
                return [new_input_data, error_message]
           
           def give_ram_data(ram_cell_index):
+          
                #we set up our error message for any possible errors
                error_message = NO_ERROR
                
@@ -552,7 +562,7 @@ class display_state:
                ram_cell_index = give_int(ram_cell_index)
                
                error_message = ram_cell_index[1] if (ram_cell_index[1]<error_message) else error_message
-               ram_cell_index = ram_cell_index[1]
+               ram_cell_index = ram_cell_index[0]
                
                #we see if the new index is within the acceptable ram indices
                new_ram_cell_index = (ram_cell_index%computer.RAM_COUNT)
@@ -641,15 +651,15 @@ class display_state:
                error_message = NO_ERROR
                
                #we identify the type of data, and we then find what its value is
-               output_list = []
+               this_output_list = []
                for element in [[register_format, give_register_data], [pointer_format, give_ram_data], [integer_format, give_int]]:
                     if (data_type==element[0]):
-                         output_list = element[1](input_data)
+                         this_output_list = element[1](input_data)
                          break
                
                #we separate the output and the error code
-               output = output_list[0]
-               error_message = (output_list[1] if (output_list[1]<error_message) else error_message)
+               output = this_output_list[0]
+               error_message = (this_output_list[1] if (this_output_list[1]<error_message) else error_message)
                
                #we return the data
                return [output, error_message]
@@ -721,13 +731,51 @@ class display_state:
                               new_line_number = element[0]
                               break
                
-          elif(new_instruction[1]=="LD" or new_instruction[1]=="LDi" or new_instruction[1]=="SD" or new_instruction[1]=="SDi"):
+          elif(new_instruction[1]=="LD"):
+               if (new_instruction[TYPE_LIST_INDEX][0]=="<nnnn>"):
+                    data = give_value(new_instruction[TYPE_LIST_INDEX][0], new_instruction[ELEMENT_LIST_INDEX][0])
+                    error_message = return_smaller(data[1], error_message)
+                    
+                    data = set_value(new_instruction[TYPE_LIST_INDEX][1], new_instruction[ELEMENT_LIST_INDEX][1], data[0])               
+                    error_message = return_smaller(data[1], error_message)
+               else:
+                    
+                    ram_add_from_reg = give_value(new_instruction[TYPE_LIST_INDEX][0], new_instruction[ELEMENT_LIST_INDEX][0])
+                    error_message = return_smaller(error_message, ram_add_from_reg[1])
+                    
+                    data = give_value("<nnnn>", ram_add_from_reg[0])
+                    error_message = return_smaller(data[1], error_message)
+                    data = data[0]
+
+                    #data = computer.MEMORY_VIEW[give_int(ram_add_from_reg[0])[0]]
+                    
+                    new_data = set_value(new_instruction[TYPE_LIST_INDEX][1], new_instruction[ELEMENT_LIST_INDEX][1], data)               
+                    error_message = return_smaller(new_data[1], error_message)
+               
+          elif(new_instruction[1]=="SD"):
+               if (new_instruction[TYPE_LIST_INDEX][1] == "<nnnn>"):
+                    data = give_value(new_instruction[TYPE_LIST_INDEX][0], new_instruction[ELEMENT_LIST_INDEX][0])
+                    error_message = return_smaller(data[1], error_message)
+                    
+                    data = set_value(new_instruction[TYPE_LIST_INDEX][1], new_instruction[ELEMENT_LIST_INDEX][1], data[0])               
+                    error_message = return_smaller(data[1], error_message)
+               else:
+                    ram_add_from_reg = give_value(new_instruction[TYPE_LIST_INDEX][1], new_instruction[ELEMENT_LIST_INDEX][1])
+                    error_message = return_smaller(error_message, ram_add_from_reg[1])
+                    
+                    data = give_value(new_instruction[TYPE_LIST_INDEX][0], new_instruction[ELEMENT_LIST_INDEX][0])
+                    error_message = return_smaller(data[1], error_message)
+                    
+                    data = set_value("<nnnn>", ram_add_from_reg[0], data[0])               
+                    error_message = return_smaller(data[1], error_message)
+               
+          elif(new_instruction[1]=="LDi" or new_instruction[1]=="SDi"):
                data = give_value(new_instruction[TYPE_LIST_INDEX][0], new_instruction[ELEMENT_LIST_INDEX][0])
                error_message = return_smaller(data[1], error_message)
                
                data = set_value(new_instruction[TYPE_LIST_INDEX][1], new_instruction[ELEMENT_LIST_INDEX][1], data[0])               
                error_message = return_smaller(data[1], error_message)
-
+               
           elif(new_instruction[1]=="ADD"):
                data_one = give_value(new_instruction[TYPE_LIST_INDEX][0], new_instruction[ELEMENT_LIST_INDEX][0])
                error_message = return_smaller(data_one[1], error_message)
@@ -771,8 +819,8 @@ class display_state:
                sum_var = 0
                if (data_two[0]==0):
                     error_message = return_smaller(error_message, FATAL_DIV_BY_ZERO)
-                    FLOAT_ROUDNING_THRESHOLD = 0.0001
-                    sum_var = int(math.pow(2, 16 if (computer.HIGH_BIT_MODE) else 8)+FLOAT_ROUNDING_THRESHOLD)-1
+                    A_FLOAT_ROUDNING_THRESHOLD = 0.0001
+                    sum_var = int(math.pow(2, 16 if (computer.HIGH_BIT_MODE) else 8)+A_FLOAT_ROUDNING_THRESHOLD)-1
                else:
                     sum_var = data_one[0] / data_two[0]                    
 
@@ -825,8 +873,8 @@ class display_state:
                else:
                     caster = ctypes.c_uint8
                     
-               integer_input_one = caster(integer_input_one).value
-               integer_input_two = caster(integer_input_two).value
+               integer_input_one = caster(integer_input_one[0]).value
+               integer_input_two = caster(integer_input_two[0]).value
                integer_output = caster(integer_input_one & integer_input_two).value
                
                integer_output_set = set_value(new_instruction[TYPE_LIST_INDEX][2], new_instruction[ELEMENT_LIST_INDEX][2], integer_output)
@@ -845,8 +893,8 @@ class display_state:
                else:
                     caster = ctypes.c_uint8
                     
-               integer_input_one = caster(integer_input_one).value
-               integer_input_two = caster(integer_input_two).value
+               integer_input_one = caster(integer_input_one[0]).value
+               integer_input_two = caster(integer_input_two[0]).value
                integer_output = caster(integer_input_one | integer_input_two).value
                
                integer_output_set = set_value(new_instruction[TYPE_LIST_INDEX][2], new_instruction[ELEMENT_LIST_INDEX][2], integer_output)
@@ -865,8 +913,8 @@ class display_state:
                else:
                     caster = ctypes.c_uint8
                     
-               integer_input_one = caster(integer_input_one).value
-               integer_input_two = caster(integer_input_two).value
+               integer_input_one = caster(integer_input_one[0]).value
+               integer_input_two = caster(integer_input_two[0]).value
                integer_output = caster(integer_input_one ^ integer_input_two).value
                
                integer_output_set = set_value(new_instruction[TYPE_LIST_INDEX][2], new_instruction[ELEMENT_LIST_INDEX][2], integer_output)
@@ -882,7 +930,7 @@ class display_state:
                else:
                     caster = ctypes.c_uint8
                     
-               integer_input_one = caster(integer_input_one).value
+               integer_input_one = caster(integer_input_one[0]).value
                integer_output = caster(~integer_input_one).value
                
                integer_output_set = set_value(new_instruction[TYPE_LIST_INDEX][1], new_instruction[ELEMENT_LIST_INDEX][1], integer_output)
@@ -899,12 +947,21 @@ class display_state:
                pop_var = pop()
                error_message = return_smaller(error_message, pop_var[1])
                
-               stack_data = set_value(new_instruction[TYPE_LIST_INDEX][0], new_instruction[ELEMENT_LIST_INDEX][0], pop_var[1])
+               stack_data = set_value(new_instruction[TYPE_LIST_INDEX][0], new_instruction[ELEMENT_LIST_INDEX][0], pop_var[0])
                error_message = return_smaller(error_message, stack_data[1])
           
           elif(new_instruction[1]==""):
                var_test = (1+1==2)
-          
+               
+          #we check if any of the RAM cells that are sources to the text console have an invalid value stored in them
+          beginning_index = computer.RAM_COUNT - computer.CONSOLE_COUNT
+          ending_index = computer.RAM_COUNT
+          NUMBER_OF_ASCII_CHARACTERS = 256
+          for console_check_idx in range(beginning_index, ending_index):
+               if (computer.MEMORY_VIEW[console_check_idx]>=256):
+                    error_message = return_smaller(error_message, INCORRECT_CHAR)
+                    break
+               
           #we now set the latest error message after sorting errors by level of importance
           if (error_message==FATAL_DIV_BY_ZERO):
                computer.LAST_ERROR = "FATAL ERROR: Division by 0"
@@ -1085,9 +1142,7 @@ while(index<instruction_count):
      #we increment according to what the last instruction indicated
      index = NEW_INDEX
      has_started = True
-     
-#INCLUDE:
-#*Interrupt because of FATAL runtime error
 
 #TEST:
 #each runtime error case
+#each command

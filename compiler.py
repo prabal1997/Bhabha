@@ -1021,7 +1021,7 @@ class display_state:
           #we terminate compilation after printing an appropriate error message on the screen.          
           if (terminate_compilation):
                print(bcolors.give_red_text("Parsing Terminated."), file=sys.stderr)
-               quit()
+               sys.exit()
 
 
 #||---------------------------------------------||
@@ -1128,7 +1128,7 @@ while(index<instruction_count):
      #we see if a fatal error occurred during the last statement
      FATAL_DIV_BY_ZERO_KEY = 0
      if (line_order_state[0]==FATAL_DIV_BY_ZERO_KEY):
-          quit()
+          sys.exit()
      
      #we now see if a jump statement occurred
      CHECK_FOR_JUMP = (line_order_state[1][0]==0)

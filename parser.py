@@ -358,7 +358,7 @@ def eprint(is_error, terminate_compilation, *args, **kwargs):
      #we terminate compilation after printing an appropriate error message on the screen.          
      if (terminate_compilation):
           print(bcolors.FAIL + "Parsing Terminated." + bcolors.ENDC, file=sys.stderr)
-          quit()
+          sys.exit()
 eprint.warning_counter = 1
 eprint.error_counter = 1
 
@@ -371,7 +371,7 @@ if (not platform_supports_color()):
 
 if (len(sys.argv)==2 and sys.argv[1].lower()=="-help"):
      properties.help()
-     quit()
+     sys.exit()
 
 #we print an empty line to resolve minor formatting issue
 print("")
@@ -471,18 +471,17 @@ if (global_parameter_list[WRITE_CONSOLE_INDEX][2]):
      open_file.write(output_string)
      
      #we end the script here
-     quit()
+     sys.exit()
 else:
           
      if (has_errors):
-          quit()
+          sys.exit()
      else:
           #we include errors in the screen to be displayed first
           print(output_string.strip()+"\n")
           
           #we wait for user key press
           raw_input(bcolors.give_yellow_text("Press any key to continue...\n"))
-          
           #we now print the output screen at a pace user wants us to
           SCREEN_DISPLAY_PACE_INDEX = 5
           FREQ = global_parameter_list[SCREEN_DISPLAY_PACE_INDEX][2]
@@ -507,4 +506,4 @@ else:
                          print(element)
                
 
-quit()
+sys.exit()

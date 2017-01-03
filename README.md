@@ -63,24 +63,23 @@ shows the internal state of the machine as the user code executes
 | Instruction | Syntax           | Description |
 | ------------- |:-------------:|:-------------:|
 | `LD`    | `LD <nnnn>, Ri` or `LD Ri, Rj`   |  [Download Python 2.7](https://www.python.org/downloads/release/python-2712/) |
-| `LDi`      | Graphics Display |  [Download Tablulate](https://pypi.python.org/pypi/tabulate) |
-| `SD`    | Running Bhabha   |  [Download Python 2.7](https://www.python.org/downloads/release/python-2712/) |
-| `SDi`      | Graphics Display |  [Download Tablulate](https://pypi.python.org/pypi/tabulate) |
-| `ADD`    | Running Bhabha   |  [Download Python 2.7](https://www.python.org/downloads/release/python-2712/) |
-| `SUB`      | Graphics Display |  [Download Tablulate](https://pypi.python.org/pypi/tabulate) |
-| `MUL`    | Running Bhabha   |  [Download Python 2.7](https://www.python.org/downloads/release/python-2712/) |
-| `DIV`      | Graphics Display |  [Download Tablulate](https://pypi.python.org/pypi/tabulate) |
-| `JMP`    | Running Bhabha   |  [Download Python 2.7](https://www.python.org/downloads/release/python-2712/) |
-| `JZ`      | Graphics Display |  [Download Tablulate](https://pypi.python.org/pypi/tabulate) |
-| `JNZ`    | Running Bhabha   |  [Download Python 2.7](https://www.python.org/downloads/release/python-2712/) |
-| `MORE`      | Graphics Display |  [Download Tablulate](https://pypi.python.org/pypi/tabulate) |
-| `LESS`    | Running Bhabha   |  [Download Python 2.7](https://www.python.org/downloads/release/python-2712/) |
-| `SAME`      | Graphics Display |  [Download Tablulate](https://pypi.python.org/pypi/tabulate) |
-| `AND`    | Running Bhabha   |  [Download Python 2.7](https://www.python.org/downloads/release/python-2712/) |
-| `OR`      | Graphics Display |  [Download Tablulate](https://pypi.python.org/pypi/tabulate) |
-| `XOR`    | Running Bhabha   |  [Download Python 2.7](https://www.python.org/downloads/release/python-2712/) |
-| `NOT`      | Graphics Display |  [Download Tablulate](https://pypi.python.org/pypi/tabulate) |
-| `PUSH`    | Running Bhabha   |  [Download Python 2.7](https://www.python.org/downloads/release/python-2712/) |
-| `POP`      | Graphics Display |  [Download Tablulate](https://pypi.python.org/pypi/tabulate) |
-| `LD`    | Running Bhabha   |  [Download Python 2.7](https://www.python.org/downloads/release/python-2712/) |
-| Label Name      | Graphics Display |  [Download Tablulate](https://pypi.python.org/pypi/tabulate) |
+| `LDi`      | `nnnn, Ri` |  [Download Tablulate](https://pypi.python.org/pypi/tabulate) |
+| `SD`    | 'Ri, <nnnn>' or 'Ri, Rj'   |  [Download Python 2.7](https://www.python.org/downloads/release/python-2712/) |
+| `SDi`      | "mmmm, <nnnn>", "mmmm, Ri"] |  [Download Tablulate](https://pypi.python.org/pypi/tabulate) |
+| `ADD`    | "Ri, Rj, Rk", "Ri, nnnn, Rk"   |  [Download Python 2.7](https://www.python.org/downloads/release/python-2712/) |
+| `SUB`      | "Ri, Rj, Rk", "Ri, nnnn, Rk" |  [Download Tablulate](https://pypi.python.org/pypi/tabulate) |
+| `MUL`    | "Ri, Rj, Rk", "Ri, nnnn, Rk"   |  [Download Python 2.7](https://www.python.org/downloads/release/python-2712/) |
+| `DIV`      | "Ri, Rj, Rk", "Ri, nnnn, Rk" |  [Download Tablulate](https://pypi.python.org/pypi/tabulate) |
+| `JMP`    | "<label-name>"   |  [Download Python 2.7](https://www.python.org/downloads/release/python-2712/) |
+| `JZ`      | "Ri, <label-name>" |  [Download Tablulate](https://pypi.python.org/pypi/tabulate) |
+| `JNZ`    | "Ri, <label-name>"   |  [Download Python 2.7](https://www.python.org/downloads/release/python-2712/) |
+| `MORE`      | "Ri, Rj, Rk", "Ri, nnnn, Rk" |  [Download Tablulate](https://pypi.python.org/pypi/tabulate) |
+| `LESS`    | "Ri, Rj, Rk", "Ri, nnnn, Rk"  |  [Download Python 2.7](https://www.python.org/downloads/release/python-2712/) |
+| `SAME`      | "Ri, Rj, Rk", "Ri, nnnn, Rk" |  [Download Tablulate](https://pypi.python.org/pypi/tabulate) |
+| `AND`    | "Ri, Rj, Rk", "Ri, nnnn, Rk"   |  [Download Python 2.7](https://www.python.org/downloads/release/python-2712/) |
+| `OR`      | "Ri, Rj, Rk", "Ri, nnnn, Rk" |  [Download Tablulate](https://pypi.python.org/pypi/tabulate) |
+| `XOR`    | "Ri, Rj, Rk", "Ri, nnnn, Rk"   |  [Download Python 2.7](https://www.python.org/downloads/release/python-2712/) |
+| `NOT`      | "Ri, Rj", "nnnn, Ri" |  [Download Tablulate](https://pypi.python.org/pypi/tabulate) |
+| `PUSH`    | "Ri", "nnnn"   |  [Download Python 2.7](https://www.python.org/downloads/release/python-2712/) |
+| `POP`      | "Ri", "<nnnn>" |  [Download Tablulate](https://pypi.python.org/pypi/tabulate) |
+| Label Name      | "<label-name>:" |  [Download Tablulate](https://pypi.python.org/pypi/tabulate) |

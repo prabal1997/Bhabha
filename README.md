@@ -34,3 +34,24 @@ This section higlights the most important features that Bhabha offers to users.
 ### Internal State Display
 
 shows the internal state of the machine as the user code executes
+                "LD"   , ["<nnnn>, Ri", "Ri, Rj"]
+                "LDi"  , ["nnnn, Ri"]
+                "SD"   , ["Ri, <nnnn>", "Ri, Rj"]
+                "SDi"  , ["mmmm, <nnnn>", "mmmm, Ri"]
+                "ADD"  , ["Ri, Rj, Rk", "Ri, nnnn, Rk"]
+                "SUB"  , ["Ri, Rj, Rk", "Ri, nnnn, Rk"]
+                "MUL"  , ["Ri, Rj, Rk", "Ri, nnnn, Rk"]
+                "DIV"  , ["Ri, Rj, Rk", "Ri, nnnn, Rk"]
+                "JMP"  , ["<label-name>"]
+                "JZ"   , ["Ri, <label-name>"]
+                "JNZ"  , ["Ri, <label-name>"]
+                "MORE" , ["Ri, Rj, Rk", "Ri, nnnn, Rk"]
+                "LESS" , ["Ri, Rj, Rk", "Ri, nnnn, Rk"]
+                "SAME" , ["Ri, Rj, Rk", "Ri, nnnn, Rk"]
+                "AND"  , ["Ri, Rj, Rk", "Ri, nnnn, Rk"]
+                "OR"   , ["Ri, Rj, Rk", "Ri, nnnn, Rk"]
+                "XOR"  , ["Ri, Rj, Rk", "Ri, nnnn, Rk"]
+                "NOT"  , ["Ri, Rj", "nnnn, Ri"]
+                "PUSH" , ["Ri", "nnnn"]
+                "POP"  , ["Ri", "<nnnn>"]
+                "<label-name>:"

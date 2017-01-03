@@ -6,12 +6,12 @@ Bhabha allows users to emulate a computer of desired configuration, and then run
 
 Bhabha is an excellent way of learning about Assembly programming, as it allows users to understand how computers operate at the fundamental level.
 
-# Running Bhabha
-## Installing Dependencies
 ## Running Bhabha
-## Seeking Help
+### Installing Dependencies
+### Running Bhabha
+### Seeking Help
 
-# Assembly Code Dialect
+## Assembly Code Dialect
 
 
 ## Features

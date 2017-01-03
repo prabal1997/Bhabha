@@ -6,6 +6,13 @@ Bhabha allows users to emulate a computer of desired configuration, and then run
 
 Bhabha is an excellent way of learning about Assembly programming, as it allows users to understand how computers operate at the fundamental level.
 
+# Running Bhabha
+## Installing Dependencies
+## Running Bhabha
+## Seeking Help
+
+# Assembly Code Dialect
+
 
 ## Features
 Bhabha is highly configurable, and allows you to choose from an array of options. Bhabha can also parse your code to detect multiple types of errors and warnings before you run your code, and while it is being executed.
@@ -13,8 +20,17 @@ Bhabha is highly configurable, and allows you to choose from an array of options
 This section higlights the most important features that Bhabha offers to users.
 
 ### Custom Configuration
+#### Parameter Suggestions
 
 ### Error Detection
 
-#### Flags
-#### 'Compilera
+#### Code Analysis
+#### Code Suggestions
+##### Static Analysis
+##### Runtime Analysis
+
+
+
+### Internal State Display
+
+shows the internal state of the machine as the user code executes

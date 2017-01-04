@@ -30,13 +30,16 @@ python parser.py file_name.asm -defaultProcessor
 ```
 You can also change the various properties of the emulated machine as follows:
 ```sh
-# this will cause Bhabha to interpret the file 'file_name.asm', change the RAM size to 512 memory cells, set the number of registers to 20, and modify the text-console size to 10 characters
+# this will cause Bhabha to interpret the file 'file_name.asm', change the RAM size to 512 memory cells,
+# set the number of registers to 20, and modify the text-console size to 10 characters
 python parser.py file_name.asm -ramSize=512 -stackCount=15 -registerCount=20 -consoleSize=10
 
-# By default, each memory cell that Bhabha emulates is 16-bit unsigned, but you can change that to make Bhabha operate in 8-bit mode as follows:
+# By default, each memory cell that Bhabha emulates is 16-bit unsigned, but you can
+# change that to make Bhabha operate in 8-bit mode as follows:
 python parser.py file_name.asm -16BitMode=False
 
-# You can choose to change the speed at which code execution occurs by setting the 'executionSpeed' flag to a desired value (NOTE: a value of 0 indicates that you want to execute code on keypress)
+# You can choose to change the speed at which code execution occurs by setting the 'executionSpeed' flag
+# to a desired value (NOTE: a value of 0 indicates that you want to execute code on keypress)
 python parser.py file_name.asm -executionSpeed=5
 ```
 Please refer to the `help` flag to learn about more flags that you can.

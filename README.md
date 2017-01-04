@@ -1,6 +1,8 @@
 # Bhabha
-A 16-bit assembly simulator that allows you to view the internal machine state as the code is being executed.
+A 16-bit assembly simulator that allows you to view the internal machine state as the code is being executed. Bhabha is highly configurable, and allows you to choose from wide a array of options. Bhabha can also parse your code to detect multiple types of errors and warnings before you run your code, and while it is being executed.
+
 ![Screenshot of Bhabha](http://i.imgur.com/2o8PRVe.png)
+
 ## What does Bhabha do?
 Bhabha allows users to emulate a computer of desired configuration, and then run the desired assembly code on it. Morover, Bhabha will display the internal state of the computer as the code is being executed.
 
@@ -38,12 +40,16 @@ python parser.py file_name.asm -16BitMode=False
 python parser.py file_name.asm -executionSpeed=5
 ```
 Please refer to the `help` flag to learn about more flags that you can.
+
 ### Seeking Help
 Use the `help` flag as follows to receive a detailed explanation of all available options and more information.
 
 ```sh
 python parser.py -help
 ```
+
+### Sample Code
+You can download the code to run Bhabha stored with from the folder `Sample Code` which is a part of this repository.
 
 ## Assembly Code Dialect
 The instruction set that Bhabha uses has been derived from University of Waterloo's ECE 150 course, and closely resembles the genearl RISC dialect. Any file you wish Bhabha to interpret should have a `.asm` extension. Please refer to the following legend to understand the instruction list.
@@ -122,20 +128,3 @@ SDi 0x6F, 252
     SDi 0x21, 253
 #every line in this file is syntactically valid
 ```
-
-## Features
-Bhabha is highly configurable, and allows you to choose from an array of options. Bhabha can also parse your code to detect multiple types of errors and warnings before you run your code, and while it is being executed.
-
-This section higlights the most important features that Bhabha offers to users.
-
-### Custom Configuration
-#### Parameter Suggestions
-
-### Error Detection
-
-#### Code Analysis
-#### Code Suggestions
-##### Static Analysis
-##### Runtime Analysis
-
-### Internal State Display

@@ -52,7 +52,7 @@ python parser.py -help
 ```
 
 ### Sample Code
-You can download the code to run Bhabha stored with from the folder `Sample Code` which is a part of this repository.
+You can download the code to run Bhabha with from the folder `Sample Code` which is a part of this repository.
 
 ## Assembly Code Dialect
 The instruction set that Bhabha uses has been derived from University of Waterloo's ECE 150 course, and closely resembles the general RISC dialect. Any file you wish Bhabha to interpret should have a `.asm` extension. Please refer to the following legend to understand the instruction list.

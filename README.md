@@ -62,24 +62,24 @@ shows the internal state of the machine as the user code executes
 
 | Instruction | Syntax           | Description |
 | ------------- |:-------------:|:-------------:|
-| `LD`    | `LD <nnnn>, Ri` or `LD Ri, Rj`   |  [Download Python 2.7](https://www.python.org/downloads/release/python-2712/) |
-| `LDi`      | `LDi nnnn, Ri` |  [Download Tablulate](https://pypi.python.org/pypi/tabulate) |
-| `SD`    | `SD Ri, <nnnn>` or `SD Ri, Rj`   |  [Download Python 2.7](https://www.python.org/downloads/release/python-2712/) |
-| `SDi`      | `SDi mmmm, <nnnn>` or `SDi mmmm, Ri` |  [Download Tablulate](https://pypi.python.org/pypi/tabulate) |
-| `ADD`    | `ADD Ri, Rj, Rk` or `ADD Ri, nnnn, Rk`   |  [Download Python 2.7](https://www.python.org/downloads/release/python-2712/) |
-| `SUB`      | `SUB Ri, Rj, Rk` or `SUB Ri, nnnn, Rk` |  [Download Tablulate](https://pypi.python.org/pypi/tabulate) |
-| `MUL`    | `MUL Ri, Rj, Rk` or `MUL Ri, nnnn, Rk`   |  [Download Python 2.7](https://www.python.org/downloads/release/python-2712/) |
-| `DIV`      | `DIV Ri, Rj, Rk` or `DIV Ri, nnnn, Rk` |  [Download Tablulate](https://pypi.python.org/pypi/tabulate) |
-| `JMP`    | `JMP <label-name>`   |  [Download Python 2.7](https://www.python.org/downloads/release/python-2712/) |
-| `JZ`      | `JZ Ri, <label-name>` |  [Download Tablulate](https://pypi.python.org/pypi/tabulate) |
-| `JNZ`    | `JNZ Ri, <label-name>`   |  [Download Python 2.7](https://www.python.org/downloads/release/python-2712/) |
-| `MORE`      | `MORE Ri, Rj, Rk` or `Ri, nnnn, Rk` |  [Download Tablulate](https://pypi.python.org/pypi/tabulate) |
-| `LESS`    | `LESS Ri, Rj, Rk` or `LESS Ri, nnnn, Rk`  |  [Download Python 2.7](https://www.python.org/downloads/release/python-2712/) |
-| `SAME`      | `SAME Ri, Rj, Rk` or `SAME Ri, nnnn, Rk` |  [Download Tablulate](https://pypi.python.org/pypi/tabulate) |
-| `AND`    | `AND Ri, Rj, Rk` or `AND Ri, nnnn, Rk`   |  [Download Python 2.7](https://www.python.org/downloads/release/python-2712/) |
-| `OR`      | `OR Ri, Rj, Rk` or `OR Ri, nnnn, Rk` |  [Download Tablulate](https://pypi.python.org/pypi/tabulate) |
-| `XOR`    | `XOR Ri, Rj, Rk` or `XOR Ri, nnnn, Rk`   |  [Download Python 2.7](https://www.python.org/downloads/release/python-2712/) |
-| `NOT`      | `NOT Ri, Rj` or `NOT nnnn, Ri` |  [Download Tablulate](https://pypi.python.org/pypi/tabulate) |
-| `PUSH`    | `PUSH Ri, nnnn`   |  [Download Python 2.7](https://www.python.org/downloads/release/python-2712/) |
-| `POP`      | `POP Ri, <nnnn>` |  [Download Tablulate](https://pypi.python.org/pypi/tabulate) |
-| Label Name      | `<label-name>:` |  [Download Tablulate](https://pypi.python.org/pypi/tabulate) |
+| `LD`    | `LD <nnnn>, Ri` or `LD Rj, Ri`   | `Causes register Ri to store the data stored in memory location <nnnn>` or `Causes register Ri to store the data stored in memory location contained in Rj`  |
+| `LDi`      | `LDi nnnn, Ri` | `Causes integer nnnn to be stored in register Ri` |
+| `SD`    | `SD Ri, <nnnn>` or `SD Ri, Rj`   | `Causes data in Ri to be stored to memory location <nnnn>` or `Causes data in Ri to be stored to memory location contained in register Rj`|
+| `SDi`      | `SDi mmmm, <nnnn>` or `SDi mmmm, Ri` |  `Causes integer mmmm to be stored in memory location <nnnn>` or `Causes integer mmmm to be stored in memory location containted in register Ri` |
+| `ADD`    | `ADD Ri, Rj, Rk` or `ADD Ri, nnnn, Rk`   |  `Adds Ri and Rj, and stores the sum to register Rk` or `Adds Ri and integer nnnn and stores the result in register Rk` |
+| `SUB`      | `SUB Ri, Rj, Rk` or `SUB Ri, nnnn, Rk` |  `Subtracts Rj from Ri, and stores the result to register Rk` or `Subtracts integer nnnn from Ri and stores the result in register Rk` |
+| `MUL`    | `MUL Ri, Rj, Rk` or `MUL Ri, nnnn, Rk`   |  `Multiplies Ri and Rj, and stores the product to register Rk` or `Adds Ri and integer nnnn and stores the product to register Rk` |
+| `DIV`      | `DIV Ri, Rj, Rk` or `DIV Ri, nnnn, Rk` |  `Divides Ri by Rj, and stores the result to register Rk` or `Divides Ri by integer nnnn and stores the result in register Rk` |
+| `JMP`    | `JMP <label-name>`   |  `Causes program control to jump to label <label-name>` |
+| `JZ`      | `JZ Ri, <label-name>` |  `Causes program control to jump to label <label-name> if Ri is zero` |
+| `JNZ`    | `JNZ Ri, <label-name>`   |  `Causes program control to jump to label <label-name> if Ri is zero` |
+| `MORE`      | `MORE Ri, Rj, Rk` or `Ri, nnnn, Rk` | `Causes Rk to become 1 if Ri > Rj, 0 otherwise` or `Causes Rk to become 1 if R1 > nnnn, 0 otherwise` |
+| `LESS`    | `LESS Ri, Rj, Rk` or `LESS Ri, nnnn, Rk`  |  `Causes Rk to become 1 if Ri < Rj, 0 otherwise` or `Causes Rk to become 1 if R1 < nnnn, 0 otherwise` |
+| `SAME`      | `SAME Ri, Rj, Rk` or `SAME Ri, nnnn, Rk` |  `Causes Rk to become 1 if Ri and Rj are equal, 0 otherwise` or `Causes Rk to become 1 if R1 and integer nnnn are equal, 0 otherwise` |
+| `AND`    | `AND Ri, Rj, Rk` or `AND Ri, nnnn, Rk`   | `Calculates the bitwise AND of Ri and Rj, and stores the result in Rk` or `Calculates the bitwise AND of Ri and nnnn, and stores the result in Rk` ) |
+| `OR`      | `OR Ri, Rj, Rk` or `OR Ri, nnnn, Rk` |  `Calculates the bitwise OR of Ri and Rj, and stores the result in Rk` or `Calculates the bitwise OR of Ri and nnnn, and stores the result in Rk` |
+| `XOR`    | `XOR Ri, Rj, Rk` or `XOR Ri, nnnn, Rk`   |  `Calculates the bitwise XOR of Ri and Rj, and stores the result in Rk` or `Calculates the bitwise XOR of Ri and nnnn, and stores the result in Rk` |
+| `NOT`      | `NOT Ri, Rj` or `NOT nnnn, Ri` |  `Calculates the bitwise NOT of Ri and stores the result in Rj` or `Calculates the bitwise NOT of nnnn and stores the result in Rj` |
+| `PUSH`    | `PUSH Ri` or `PUSH nnnn`   |  `Pushes value stored in Ri onto the stack` or `Pushes integer nnnn onto the stack` |
+| `POP`      | `POP Ri` or `POP <nnnn>` |  `Pops off an element from the stack, and stores it in Ri` or `Pops off an element from the stack, and stores it in memory location <nnnn>`  |
+| Label Name      | `<label-name>:` |  `Defines a new label with name <label-name>` |

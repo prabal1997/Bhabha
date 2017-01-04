@@ -4,7 +4,7 @@ A 16-bit assembly simulator that allows you to view the internal machine state a
 ![Screenshot of Bhabha](http://i.imgur.com/2o8PRVe.png)
 
 ## What does Bhabha do?
-Bhabha allows users to emulate a computer of desired configuration, and then run the desired assembly code on it. Morover, Bhabha will display the internal state of the computer as the code is being executed.
+Bhabha allows users to emulate a computer of desired configuration, and then run the desired assembly code on it. Moreover, Bhabha will display the internal state of the computer as the code is being executed.
 
 Bhabha is an excellent way of learning about Assembly programming, as it allows users to understand how computers operate at the fundamental level.
 
@@ -52,7 +52,7 @@ python parser.py -help
 You can download the code to run Bhabha stored with from the folder `Sample Code` which is a part of this repository.
 
 ## Assembly Code Dialect
-The instruction set that Bhabha uses has been derived from University of Waterloo's ECE 150 course, and closely resembles the genearl RISC dialect. Any file you wish Bhabha to interpret should have a `.asm` extension. Please refer to the following legend to understand the instruction list.
+The instruction set that Bhabha uses has been derived from University of Waterloo's ECE 150 course, and closely resembles the general RISC dialect. Any file you wish Bhabha to interpret should have a `.asm` extension. Please refer to the following legend to understand the instruction list.
 
 ### Legend
 
@@ -71,7 +71,7 @@ All the instructions that Bhabha uses can be classified into the following categ
 | `LD`    | `LD <nnnn>, Ri` or `LD Rj, Ri`   | `Causes register Ri to store the data stored in memory location <nnnn>` or `Causes register Ri to store the data stored in memory location contained in Rj`  |
 | `LDi`      | `LDi nnnn, Ri` | `Causes integer nnnn to be stored in register Ri` |
 | `SD`    | `SD Ri, <nnnn>` or `SD Ri, Rj`   | `Causes data in Ri to be stored to memory location <nnnn>` or `Causes data in Ri to be stored to memory location contained in register Rj`|
-| `SDi`      | `SDi mmmm, <nnnn>` or `SDi mmmm, Ri` |  `Causes integer mmmm to be stored in memory location <nnnn>` or `Causes integer mmmm to be stored in memory location containted in register Ri` |
+| `SDi`      | `SDi mmmm, <nnnn>` or `SDi mmmm, Ri` |  `Causes integer mmmm to be stored in memory location <nnnn>` or `Causes integer mmmm to be stored in memory location contained in register Ri` |
 
 ### Arithmetic Instructions
 

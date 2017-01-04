@@ -62,8 +62,8 @@ The instruction set that Bhabha uses has been derived from University of Waterlo
 | Syntax | Meaning           | Examples |
 | ------------- |:-------------:|:-------------:|
 | `Ri`, `Rj`, `Rk`...    | Register   | `R1`, `R7`, `R3`...  |
-| `nnnn`, `mmmm`...      | Memory Address | `0x0`, `10`, `0x2D0`, `0b010110` |
-| `<nnnn>`, `<mmmm>`...      | Unsigned Integer | `0x9F`, `120`, `0xA1`, `0b1101` |
+| `<nnnn>`, `<mmmm>`...      | Memory Address | `0x0`, `10`, `0x2D0`, `0b010110` |
+| `nnnn`, `mmmm`...      | Unsigned Integer | `0x9F`, `120`, `0xA1`, `0b1101` |
 
 All the instructions that Bhabha uses can be classified into the following categories:
 

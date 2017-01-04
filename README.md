@@ -64,7 +64,7 @@ shows the internal state of the machine as the user code executes
 | ------------- |:-------------:|:-------------:|
 | `LD`    | `LD <nnnn>, Ri` or `LD Ri, Rj`   |  [Download Python 2.7](https://www.python.org/downloads/release/python-2712/) |
 | `LDi`      | `LDi nnnn, Ri` |  [Download Tablulate](https://pypi.python.org/pypi/tabulate) |
-| `SD`    | 'SD Ri, <nnnn>' or 'SD Ri, Rj'   |  [Download Python 2.7](https://www.python.org/downloads/release/python-2712/) |
+| `SD`    | `SD Ri, <nnnn>` or `SD Ri, Rj`   |  [Download Python 2.7](https://www.python.org/downloads/release/python-2712/) |
 | `SDi`      | `SDi mmmm, <nnnn>` or `SDi mmmm, Ri` |  [Download Tablulate](https://pypi.python.org/pypi/tabulate) |
 | `ADD`    | `ADD Ri, Rj, Rk` or `ADD Ri, nnnn, Rk`   |  [Download Python 2.7](https://www.python.org/downloads/release/python-2712/) |
 | `SUB`      | `SUB Ri, Rj, Rk` or `SUB Ri, nnnn, Rk` |  [Download Tablulate](https://pypi.python.org/pypi/tabulate) |

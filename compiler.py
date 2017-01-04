@@ -769,12 +769,29 @@ class display_state:
                     data = set_value("<nnnn>", ram_add_from_reg[0], data[0])               
                     error_message = return_smaller(data[1], error_message)
                
-          elif(new_instruction[1]=="LDi" or new_instruction[1]=="SDi"):
+          elif(new_instruction[1]=="LDi"):
                data = give_value(new_instruction[TYPE_LIST_INDEX][0], new_instruction[ELEMENT_LIST_INDEX][0])
                error_message = return_smaller(data[1], error_message)
                
                data = set_value(new_instruction[TYPE_LIST_INDEX][1], new_instruction[ELEMENT_LIST_INDEX][1], data[0])               
                error_message = return_smaller(data[1], error_message)
+               
+          elif(new_instruction[1]=="SDi"):
+               if (new_instruction[TYPE_LIST_INDEX][1] == "<nnnn>"):
+                    data = give_value(new_instruction[TYPE_LIST_INDEX][0], new_instruction[ELEMENT_LIST_INDEX][0])
+                    error_message = return_smaller(data[1], error_message)
+                    
+                    data = set_value(new_instruction[TYPE_LIST_INDEX][1], new_instruction[ELEMENT_LIST_INDEX][1], data[0])               
+                    error_message = return_smaller(data[1], error_message)
+               else:
+                    ram_add_from_reg = give_value(new_instruction[TYPE_LIST_INDEX][1], new_instruction[ELEMENT_LIST_INDEX][1])
+                    error_message = return_smaller(error_message, ram_add_from_reg[1])
+                    
+                    data = give_value(new_instruction[TYPE_LIST_INDEX][0], new_instruction[ELEMENT_LIST_INDEX][0])
+                    error_message = return_smaller(data[1], error_message)
+                    
+                    data = set_value("<nnnn>", ram_add_from_reg[0], data[0])               
+                    error_message = return_smaller(data[1], error_message)
                
           elif(new_instruction[1]=="ADD"):
                data_one = give_value(new_instruction[TYPE_LIST_INDEX][0], new_instruction[ELEMENT_LIST_INDEX][0])

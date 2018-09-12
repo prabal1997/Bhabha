@@ -1,7 +1,7 @@
 # Bhabha
 A 16-bit assembly simulator that allows you to view the internal machine state as the code is being executed. Bhabha is highly configurable, and allows you to choose from wide a array of options. Bhabha can also parse your code to detect multiple types of errors and warnings before you run your code, and while it is being executed.
 
-![Screenshot of Bhabha](http://i.imgur.com/2o8PRVe.png)
+![Screenshot of Bhabha](fixed-image.png)
 
 ## What does Bhabha do?
 Bhabha allows users to emulate a computer of desired configuration, and then run the desired assembly code on it. Moreover, Bhabha will display the internal state of the computer as the code is being executed.

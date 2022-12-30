@@ -1,4 +1,4 @@
-#this program prints 'Hello!' on the text console under defaukt configuration
+#this program prints 'Hello!' on the text console under default configuration
 SDi 0x48, 248
 SDi 0x65, 249
 SDi 0x6C, 250
